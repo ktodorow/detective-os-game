@@ -48,9 +48,14 @@ function App() {
   const [showWelcome, setShowWelcome] = useState(false)
   const [showLogin, setShowLogin] = useState(false)
   const [hideWelcome, setHideWelcome] = useState(false)
+  const [password, setPassword] = useState('')
+  const [loginStatus, setLoginStatus] = useState('idle')
+  const [fadeToDesktop, setFadeToDesktop] = useState(false)
+  const [showDesktop, setShowDesktop] = useState(false)
   const bodyRef = useRef(null)
   const audioRef = useRef(null)
   const welcomeAudioRef = useRef(null)
+  const loginTimersRef = useRef({ auth: null, swap: null })
 
   useEffect(() => {
     const blackDelay = 1000
@@ -160,15 +165,98 @@ function App() {
     return () => clearTimeout(timeout)
   }, [showLogin])
 
+  useEffect(() => {
+    return () => {
+      if (loginTimersRef.current.auth) {
+        clearTimeout(loginTimersRef.current.auth)
+      }
+      if (loginTimersRef.current.swap) {
+        clearTimeout(loginTimersRef.current.swap)
+      }
+    }
+  }, [])
+
   const handleWelcomeClick = () => {
     if (showLogin) return
     setShowLogin(true)
   }
 
+  const startLogin = () => {
+    if (!showLogin || loginStatus === 'authenticating') return
+    if (password !== '123') {
+      setPassword('')
+      return
+    }
+
+    setLoginStatus('authenticating')
+    const authTimeout = setTimeout(() => {
+      setFadeToDesktop(true)
+      const swapTimeout = setTimeout(() => {
+        setShowDesktop(true)
+        setShowWelcome(false)
+      }, 700)
+      loginTimersRef.current.swap = swapTimeout
+    }, 2000)
+    loginTimersRef.current.auth = authTimeout
+  }
+
+  const handlePasswordKeyDown = (event) => {
+    if (event.key === 'Enter') {
+      startLogin()
+    }
+  }
+
+  if (showDesktop) {
+    return (
+      <main className="app">
+        <div className="viewport desktop-screen">
+          <div className="desktop-icons">
+            <button className="desktop-icon" type="button">
+              <span className="icon-graphic computer" aria-hidden="true">
+                <svg viewBox="0 0 64 64" aria-hidden="true">
+                  <rect x="8" y="10" width="48" height="32" rx="3" />
+                  <rect x="14" y="16" width="36" height="20" rx="2" />
+                  <rect x="26" y="44" width="12" height="4" rx="1" />
+                  <rect x="20" y="48" width="24" height="4" rx="1" />
+                </svg>
+              </span>
+              <span className="icon-label">My Computer</span>
+            </button>
+            <button className="desktop-icon" type="button">
+              <span className="icon-graphic folder" aria-hidden="true">
+                <svg viewBox="0 0 64 64" aria-hidden="true">
+                  <path d="M8 20a4 4 0 0 1 4-4h14l6 6h20a4 4 0 0 1 4 4v22a4 4 0 0 1-4 4H12a4 4 0 0 1-4-4Z" />
+                  <path d="M8 24h48v8H8z" />
+                </svg>
+              </span>
+              <span className="icon-label">Case Files</span>
+            </button>
+          </div>
+          <div className="taskbar">
+            <button className="start-button" type="button" aria-label="Start">
+              <img src="/detective-face.svg" alt="" aria-hidden="true" />
+            </button>
+            <div className="taskbar-icons" aria-hidden="true">
+              <div className="taskbar-icon app-blue">SV</div>
+              <div className="taskbar-icon app-amber">EV</div>
+              <div className="taskbar-icon app-green">NB</div>
+              <div className="taskbar-icon app-slate">DM</div>
+            </div>
+          </div>
+        </div>
+      </main>
+    )
+  }
+
   if (showWelcome) {
     return (
       <main className="app">
-        <div className="viewport welcome-screen" onMouseDown={handleWelcomeClick}>
+        <div
+          className={`viewport welcome-screen ${
+            fadeToDesktop ? 'is-fading-out' : ''
+          }`}
+          onMouseDown={handleWelcomeClick}
+        >
           {!hideWelcome ? (
             <div className={`welcome-panel ${showLogin ? 'is-vacuumed' : ''}`}>
               <div className="welcome-title">Detective-OS</div>
@@ -183,14 +271,37 @@ function App() {
                 type="password"
                 placeholder="Password"
                 autoComplete="current-password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                onKeyDown={handlePasswordKeyDown}
+                disabled={loginStatus === 'authenticating'}
               />
-              <button type="button" aria-label="Enter password">
+              <button
+                type="button"
+                aria-label="Enter password"
+                onClick={startLogin}
+                disabled={loginStatus === 'authenticating'}
+              >
                 &gt;
               </button>
             </div>
           </div>
-          <div className="login-header">Login screen</div>
           <div className="login-footer">Detective-OS</div>
+          <div
+            className={`logging-overlay ${
+              loginStatus === 'authenticating' ? 'is-visible' : ''
+            }`}
+            aria-hidden="true"
+          >
+            <div className="logging-box">
+              Logging in
+              <span className="logging-dots">
+                <span>.</span>
+                <span>.</span>
+                <span>.</span>
+              </span>
+            </div>
+          </div>
           <audio
             ref={welcomeAudioRef}
             src="/audio/os-start.wav"
