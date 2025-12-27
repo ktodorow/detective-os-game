@@ -52,13 +52,15 @@ function App() {
   const [loginStatus, setLoginStatus] = useState('idle')
   const [fadeToDesktop, setFadeToDesktop] = useState(false)
   const [showDesktop, setShowDesktop] = useState(false)
-  const [isComputerOpen, setIsComputerOpen] = useState(false)
-  const [isComputerMinimized, setIsComputerMinimized] = useState(false)
-  const [isComputerMaximized, setIsComputerMaximized] = useState(false)
+  const [windows, setWindows] = useState([])
+  const [draggingWindow, setDraggingWindow] = useState(null)
   const bodyRef = useRef(null)
   const audioRef = useRef(null)
   const welcomeAudioRef = useRef(null)
   const loginTimersRef = useRef({ auth: null, swap: null })
+  const windowIdRef = useRef(1)
+  const windowZRef = useRef(20)
+  const viewportRef = useRef(null)
 
   useEffect(() => {
     const blackDelay = 1000
@@ -184,6 +186,19 @@ function App() {
     setShowLogin(true)
   }
 
+  const handleWindowMouseDown = (event, windowData) => {
+    bringWindowToFront(windowData.id)
+    if (windowData.isMaximized) return
+    const viewport = viewportRef.current
+    if (!viewport) return
+    const rect = viewport.getBoundingClientRect()
+    setDraggingWindow({
+      id: windowData.id,
+      offsetX: event.clientX - rect.left - windowData.x,
+      offsetY: event.clientY - rect.top - windowData.y
+    })
+  }
+
   const startLogin = () => {
     if (!showLogin || loginStatus === 'authenticating') return
     if (password !== '123') {
@@ -210,31 +225,138 @@ function App() {
   }
 
   const openComputerWindow = () => {
-    setIsComputerOpen(true)
-    setIsComputerMinimized(false)
+    const id = windowIdRef.current++
+    const zIndex = ++windowZRef.current
+    setWindows((prev) => {
+      const offset = (prev.length * 24) % 120
+      return [
+        ...prev,
+        {
+          id,
+          type: 'computer',
+          title: 'My Computer',
+          x: 220 + offset,
+          y: 110 + offset,
+          width: 520,
+          height: 360,
+          isMinimized: false,
+          isMaximized: false,
+          zIndex,
+          normal: null
+        }
+      ]
+    })
   }
 
-  const closeComputerWindow = () => {
-    setIsComputerOpen(false)
-    setIsComputerMinimized(false)
-    setIsComputerMaximized(false)
+  const bringWindowToFront = (id) => {
+    const zIndex = ++windowZRef.current
+    setWindows((prev) =>
+      prev.map((window) =>
+        window.id === id ? { ...window, zIndex } : window
+      )
+    )
   }
 
-  const toggleComputerMinimize = () => {
-    setIsComputerMinimized((prev) => !prev)
+  const closeWindow = (id) => {
+    setWindows((prev) => prev.filter((window) => window.id !== id))
   }
 
-  const toggleComputerMaximize = () => {
-    setIsComputerMaximized((prev) => !prev)
-    setIsComputerMinimized(false)
+  const toggleWindowMinimize = (id) => {
+    setWindows((prev) =>
+      prev.map((window) =>
+        window.id === id
+          ? { ...window, isMinimized: !window.isMinimized }
+          : window
+      )
+    )
   }
+
+  const toggleWindowMaximize = (id) => {
+    setWindows((prev) =>
+      prev.map((window) => {
+        if (window.id !== id) return window
+        if (window.isMaximized) {
+          const normal = window.normal || {
+            x: 220,
+            y: 110,
+            width: 520,
+            height: 360
+          }
+          return {
+            ...window,
+            isMaximized: false,
+            x: normal.x,
+            y: normal.y,
+            width: normal.width,
+            height: normal.height,
+            normal: null
+          }
+        }
+        return {
+          ...window,
+          isMaximized: true,
+          isMinimized: false,
+          normal: {
+            x: window.x,
+            y: window.y,
+            width: window.width,
+            height: window.height
+          }
+        }
+      })
+    )
+  }
+
+  useEffect(() => {
+    if (!draggingWindow) return
+
+    const handleMouseMove = (event) => {
+      const viewport = viewportRef.current
+      if (!viewport) return
+      const rect = viewport.getBoundingClientRect()
+
+      setWindows((prev) =>
+        prev.map((window) => {
+          if (window.id !== draggingWindow.id) return window
+          const maxX = rect.width - window.width
+          const maxY = rect.height - window.height - 48
+          const nextX = Math.min(
+            Math.max(event.clientX - rect.left - draggingWindow.offsetX, 0),
+            Math.max(maxX, 0)
+          )
+          const nextY = Math.min(
+            Math.max(event.clientY - rect.top - draggingWindow.offsetY, 0),
+            Math.max(maxY, 0)
+          )
+          return { ...window, x: nextX, y: nextY }
+        })
+      )
+    }
+
+    const handleMouseUp = () => {
+      setDraggingWindow(null)
+    }
+
+    window.addEventListener('mousemove', handleMouseMove)
+    window.addEventListener('mouseup', handleMouseUp)
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove)
+      window.removeEventListener('mouseup', handleMouseUp)
+    }
+  }, [draggingWindow])
 
   if (showDesktop) {
     return (
       <main className="app">
-        <div className="viewport desktop-screen">
+        <div className="viewport desktop-screen" ref={viewportRef}>
+          <div className="desktop-header">Desktop</div>
           <div className="desktop-icons">
-            <button className="desktop-icon" type="button" onClick={openComputerWindow}>
+            <button
+              className="desktop-icon"
+              type="button"
+              onClick={openComputerWindow}
+            >
               <span className="icon-graphic computer" aria-hidden="true">
                 <svg viewBox="0 0 64 64" aria-hidden="true">
                   <rect x="8" y="10" width="48" height="32" rx="3" />
@@ -255,62 +377,93 @@ function App() {
               <span className="icon-label">Case Files</span>
             </button>
           </div>
-          {isComputerOpen && !isComputerMinimized ? (
-            <div
-              className={`desktop-window ${
-                isComputerMaximized ? 'is-maximized' : ''
-              }`}
-            >
-              <div className="window-titlebar">
-                <div className="window-title">My Computer</div>
-                <div className="window-controls">
-                  <button
-                    type="button"
-                    onClick={toggleComputerMinimize}
-                    aria-label="Minimize window"
-                  >
-                    _
-                  </button>
-                  <button
-                    type="button"
-                    onClick={toggleComputerMaximize}
-                    aria-label={
-                      isComputerMaximized ? 'Restore window' : 'Maximize window'
+          {windows
+            .filter((appWindow) => !appWindow.isMinimized)
+            .map((appWindow) => {
+              const style = appWindow.isMaximized
+                ? { zIndex: appWindow.zIndex }
+                : {
+                    top: appWindow.y,
+                    left: appWindow.x,
+                    width: appWindow.width,
+                    height: appWindow.height,
+                    zIndex: appWindow.zIndex
+                  }
+              return (
+                <div
+                  key={appWindow.id}
+                  className={`desktop-window ${
+                    appWindow.isMaximized ? 'is-maximized' : ''
+                  }`}
+                  style={style}
+                  onMouseDown={() => bringWindowToFront(appWindow.id)}
+                >
+                  <div
+                    className="window-titlebar"
+                    onMouseDown={(event) =>
+                      handleWindowMouseDown(event, appWindow)
                     }
                   >
-                    []
-                  </button>
-                  <button
-                    type="button"
-                    onClick={closeComputerWindow}
-                    aria-label="Close window"
-                  >
-                    X
-                  </button>
+                    <div className="window-title">{appWindow.title}</div>
+                    <div className="window-controls">
+                      <button
+                        type="button"
+                        onClick={() => toggleWindowMinimize(appWindow.id)}
+                        onMouseDown={(event) => event.stopPropagation()}
+                        aria-label="Minimize window"
+                      >
+                        _
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => toggleWindowMaximize(appWindow.id)}
+                        onMouseDown={(event) => event.stopPropagation()}
+                        aria-label={
+                          appWindow.isMaximized
+                            ? 'Restore window'
+                            : 'Maximize window'
+                        }
+                      >
+                        []
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => closeWindow(appWindow.id)}
+                        onMouseDown={(event) => event.stopPropagation()}
+                        aria-label="Close window"
+                      >
+                        X
+                      </button>
+                    </div>
+                  </div>
+                  <div className="window-body">
+                    <div className="window-empty">No content yet.</div>
+                  </div>
                 </div>
-              </div>
-              <div className="window-body">
-                <div className="window-empty">No content yet.</div>
-              </div>
-            </div>
-          ) : null}
+              )
+            })}
           <div className="taskbar">
             <button className="start-button" type="button" aria-label="Start">
               <img src="/detective-face.svg" alt="" aria-hidden="true" />
             </button>
             <div className="taskbar-windows">
-              {isComputerOpen ? (
+              {windows.map((appWindow) => (
                 <button
                   className={`taskbar-window ${
-                    isComputerMinimized ? 'is-minimized' : 'is-active'
+                    appWindow.isMinimized ? 'is-minimized' : 'is-active'
                   }`}
                   type="button"
-                  onClick={toggleComputerMinimize}
+                  onClick={() => {
+                    toggleWindowMinimize(appWindow.id)
+                    bringWindowToFront(appWindow.id)
+                  }}
                 >
                   <span className="taskbar-window-icon">PC</span>
-                  <span className="taskbar-window-label">Computer</span>
+                  <span className="taskbar-window-label">
+                    {appWindow.title}
+                  </span>
                 </button>
-              ) : null}
+              ))}
             </div>
             <div className="taskbar-icons" aria-hidden="true">
               <div className="taskbar-icon app-blue">SV</div>

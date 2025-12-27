@@ -443,10 +443,6 @@
 
 .desktop-window {
   position: absolute;
-  top: 110px;
-  left: 220px;
-  width: 520px;
-  height: 360px;
   background: rgba(245, 245, 245, 0.98);
   border: 1px solid rgba(24, 24, 24, 0.25);
   border-radius: 12px;
@@ -475,6 +471,12 @@
   border-bottom: 1px solid rgba(0, 0, 0, 0.1);
   font-size: 0.9rem;
   color: #1b1b1b;
+  cursor: grab;
+  user-select: none;
+}
+
+.window-titlebar:active {
+  cursor: grabbing;
 }
 
 .window-title {
