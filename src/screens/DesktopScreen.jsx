@@ -13,13 +13,13 @@ export function DesktopScreen() {
     closeWindow,
     toggleMinimize,
     toggleMaximize,
-    startDrag
+    startDrag,
+    startResize
   } = useWindowManager(viewportRef)
 
   return (
     <main className="app">
       <div className="viewport desktop-screen" ref={viewportRef}>
-        <div className="desktop-header">Desktop</div>
         <div className="desktop-icons">
           <DesktopIcon label="My Computer" onClick={() => openWindow('computer')}>
             <span className="icon-graphic computer" aria-hidden="true">
@@ -59,6 +59,7 @@ export function DesktopScreen() {
                 style={style}
                 onFocus={() => bringToFront(appWindow.id)}
                 onDragStart={(event) => startDrag(event, appWindow)}
+                onResizeStart={(event) => startResize(event, appWindow)}
                 onMinimize={() => toggleMinimize(appWindow.id)}
                 onMaximize={() => toggleMaximize(appWindow.id)}
                 onClose={() => closeWindow(appWindow.id)}

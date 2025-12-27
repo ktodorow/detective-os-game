@@ -15,6 +15,7 @@ const TASKBAR_HEIGHT = 48
 export function useWindowManager(viewportRef) {
   const [windows, setWindows] = useState([])
   const [draggingWindow, setDraggingWindow] = useState(null)
+  const [resizingWindow, setResizingWindow] = useState(null)
   const windowIdRef = useRef(1)
   const windowZRef = useRef(20)
 
@@ -116,6 +117,23 @@ export function useWindowManager(viewportRef) {
     })
   }
 
+  const startResize = (event, windowData) => {
+    bringToFront(windowData.id)
+    if (windowData.isMaximized) return
+    const viewport = viewportRef.current
+    if (!viewport) return
+    const rect = viewport.getBoundingClientRect()
+    setResizingWindow({
+      id: windowData.id,
+      startX: event.clientX - rect.left,
+      startY: event.clientY - rect.top,
+      startWidth: windowData.width,
+      startHeight: windowData.height,
+      originX: windowData.x,
+      originY: windowData.y
+    })
+  }
+
   useEffect(() => {
     if (!draggingWindow) return
 
@@ -155,6 +173,54 @@ export function useWindowManager(viewportRef) {
     }
   }, [draggingWindow, viewportRef])
 
+  useEffect(() => {
+    if (!resizingWindow) return
+
+    const handleMouseMove = (event) => {
+      const viewport = viewportRef.current
+      if (!viewport) return
+      const rect = viewport.getBoundingClientRect()
+      const minWidth = 320
+      const minHeight = 220
+
+      setWindows((prev) =>
+        prev.map((window) => {
+          if (window.id !== resizingWindow.id) return window
+          const maxWidth = rect.width - resizingWindow.originX
+          const maxHeight =
+            rect.height - TASKBAR_HEIGHT - resizingWindow.originY
+          const deltaX = event.clientX - rect.left - resizingWindow.startX
+          const deltaY = event.clientY - rect.top - resizingWindow.startY
+          const nextWidth = Math.min(
+            Math.max(resizingWindow.startWidth + deltaX, minWidth),
+            Math.max(maxWidth, minWidth)
+          )
+          const nextHeight = Math.min(
+            Math.max(resizingWindow.startHeight + deltaY, minHeight),
+            Math.max(maxHeight, minHeight)
+          )
+          return {
+            ...window,
+            width: nextWidth,
+            height: nextHeight
+          }
+        })
+      )
+    }
+
+    const handleMouseUp = () => {
+      setResizingWindow(null)
+    }
+
+    window.addEventListener('mousemove', handleMouseMove)
+    window.addEventListener('mouseup', handleMouseUp)
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove)
+      window.removeEventListener('mouseup', handleMouseUp)
+    }
+  }, [resizingWindow, viewportRef])
+
   return {
     windows,
     openWindow,
@@ -162,6 +228,7 @@ export function useWindowManager(viewportRef) {
     closeWindow,
     toggleMinimize,
     toggleMaximize,
-    startDrag
+    startDrag,
+    startResize
   }
 }

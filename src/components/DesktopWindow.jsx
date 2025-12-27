@@ -17,6 +17,7 @@ export function DesktopWindow({
   style,
   onFocus,
   onDragStart,
+  onResizeStart,
   onMinimize,
   onMaximize,
   onClose
@@ -70,6 +71,14 @@ export function DesktopWindow({
       <div className="window-body">
         <div className="window-empty">No content yet.</div>
       </div>
+      <div
+        className="window-resizer"
+        onMouseDown={(event) => {
+          event.stopPropagation()
+          onResizeStart?.(event)
+        }}
+        aria-hidden="true"
+      />
     </div>
   )
 }

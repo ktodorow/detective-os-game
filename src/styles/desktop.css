@@ -99,6 +99,10 @@
   border-radius: 0;
 }
 
+.desktop-window.is-maximized .window-resizer {
+  display: none;
+}
+
 .window-titlebar {
   height: 36px;
   display: flex;
@@ -170,6 +174,26 @@
   place-items: center;
   color: #555;
   font-size: 0.95rem;
+}
+
+.window-resizer {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  width: 16px;
+  height: 16px;
+  cursor: se-resize;
+}
+
+.window-resizer::before {
+  content: '';
+  position: absolute;
+  right: 3px;
+  bottom: 3px;
+  width: 10px;
+  height: 10px;
+  border-right: 2px solid rgba(120, 120, 120, 0.8);
+  border-bottom: 2px solid rgba(120, 120, 120, 0.8);
 }
 
 .window-empty {
