@@ -7,35 +7,89 @@ const WINDOW_TEMPLATES = {
     height: 360,
     x: 220,
     y: 110
+  },
+  folder: {
+    title: 'Case Files',
+    width: 520,
+    height: 360,
+    x: 260,
+    y: 140
+  },
+  settings: {
+    title: 'Settings',
+    width: 460,
+    height: 320,
+    x: 280,
+    y: 160
   }
 }
 
 const TASKBAR_HEIGHT = 48
+const MIN_WIDTH = 320
+const MIN_HEIGHT = 220
 
 export function useWindowManager(viewportRef) {
   const [windows, setWindows] = useState([])
   const [draggingWindow, setDraggingWindow] = useState(null)
   const [resizingWindow, setResizingWindow] = useState(null)
+  const [viewportSize, setViewportSize] = useState({ width: 0, height: 0 })
   const windowIdRef = useRef(1)
   const windowZRef = useRef(20)
+
+  const clampRect = (rect, bounds) => {
+    const availableHeight = Math.max(bounds.height - TASKBAR_HEIGHT, 0)
+    const widthLimit = Math.max(bounds.width, 0)
+    const heightLimit = Math.max(availableHeight, 0)
+    const nextWidth =
+      widthLimit >= MIN_WIDTH
+        ? Math.min(Math.max(rect.width, MIN_WIDTH), widthLimit)
+        : Math.min(rect.width, widthLimit)
+    const nextHeight =
+      heightLimit >= MIN_HEIGHT
+        ? Math.min(Math.max(rect.height, MIN_HEIGHT), heightLimit)
+        : Math.min(rect.height, heightLimit)
+    const maxX = Math.max(widthLimit - nextWidth, 0)
+    const maxY = Math.max(heightLimit - nextHeight, 0)
+    const nextX = Math.min(Math.max(rect.x, 0), maxX)
+    const nextY = Math.min(Math.max(rect.y, 0), maxY)
+    return { x: nextX, y: nextY, width: nextWidth, height: nextHeight }
+  }
 
   const openWindow = (type) => {
     const template = WINDOW_TEMPLATES[type]
     if (!template) return
-    const id = windowIdRef.current++
     const zIndex = ++windowZRef.current
     setWindows((prev) => {
+      const existing = prev.find((window) => window.type === type)
+      if (existing) {
+        return prev.map((window) =>
+          window.type === type
+            ? { ...window, isMinimized: false, zIndex }
+            : window
+        )
+      }
+      const id = windowIdRef.current++
       const offset = (prev.length * 24) % 120
+      const bounds =
+        viewportSize.width && viewportSize.height
+          ? viewportSize
+          : { width: template.width, height: template.height + TASKBAR_HEIGHT }
+      const rect = clampRect(
+        {
+          x: template.x + offset,
+          y: template.y + offset,
+          width: template.width,
+          height: template.height
+        },
+        bounds
+      )
       return [
         ...prev,
         {
           id,
           type,
           title: template.title,
-          x: template.x + offset,
-          y: template.y + offset,
-          width: template.width,
-          height: template.height,
+          ...rect,
           isMinimized: false,
           isMaximized: false,
           zIndex,
@@ -44,6 +98,40 @@ export function useWindowManager(viewportRef) {
       ]
     })
   }
+
+  useEffect(() => {
+    const viewport = viewportRef.current
+    if (!viewport || typeof ResizeObserver === 'undefined') return
+    const observer = new ResizeObserver((entries) => {
+      const entry = entries[0]
+      if (!entry) return
+      const { width, height } = entry.contentRect
+      setViewportSize({ width, height })
+    })
+    observer.observe(viewport)
+
+    return () => observer.disconnect()
+  }, [viewportRef])
+
+  useEffect(() => {
+    if (!viewportSize.width || !viewportSize.height) return
+    setWindows((prev) =>
+      prev.map((window) => {
+        const nextNormal = window.normal
+          ? clampRect(window.normal, viewportSize)
+          : null
+        if (window.isMaximized) {
+          return nextNormal ? { ...window, normal: nextNormal } : window
+        }
+        const clamped = clampRect(window, viewportSize)
+        return {
+          ...window,
+          ...clamped,
+          normal: nextNormal
+        }
+      })
+    )
+  }, [viewportSize])
 
   const bringToFront = (id) => {
     const zIndex = ++windowZRef.current
@@ -180,9 +268,6 @@ export function useWindowManager(viewportRef) {
       const viewport = viewportRef.current
       if (!viewport) return
       const rect = viewport.getBoundingClientRect()
-      const minWidth = 320
-      const minHeight = 220
-
       setWindows((prev) =>
         prev.map((window) => {
           if (window.id !== resizingWindow.id) return window
@@ -192,12 +277,12 @@ export function useWindowManager(viewportRef) {
           const deltaX = event.clientX - rect.left - resizingWindow.startX
           const deltaY = event.clientY - rect.top - resizingWindow.startY
           const nextWidth = Math.min(
-            Math.max(resizingWindow.startWidth + deltaX, minWidth),
-            Math.max(maxWidth, minWidth)
+            Math.max(resizingWindow.startWidth + deltaX, MIN_WIDTH),
+            Math.max(maxWidth, MIN_WIDTH)
           )
           const nextHeight = Math.min(
-            Math.max(resizingWindow.startHeight + deltaY, minHeight),
-            Math.max(maxHeight, minHeight)
+            Math.max(resizingWindow.startHeight + deltaY, MIN_HEIGHT),
+            Math.max(maxHeight, MIN_HEIGHT)
           )
           return {
             ...window,

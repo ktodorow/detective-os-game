@@ -2,10 +2,12 @@ import { useRef } from 'react'
 import { DesktopIcon } from '../components/DesktopIcon'
 import { DesktopWindow } from '../components/DesktopWindow'
 import { useWindowManager } from '../hooks/useWindowManager'
+import { RESOLUTION_MODES, useResolution } from '../state/resolutionContext'
 import '../styles/desktop.css'
 
 export function DesktopScreen() {
   const viewportRef = useRef(null)
+  const { mode, setMode } = useResolution()
   const {
     windows,
     openWindow,
@@ -16,6 +18,43 @@ export function DesktopScreen() {
     startDrag,
     startResize
   } = useWindowManager(viewportRef)
+
+  const renderWindowContent = (appWindow) => {
+    if (appWindow.type === 'settings') {
+      return (
+        <div className="settings-panel">
+          <div className="settings-title">Display</div>
+          <div className="settings-group">
+            <div className="settings-label">Resolution</div>
+            <label className="settings-option">
+              <input
+                type="radio"
+                name="resolution"
+                checked={mode === RESOLUTION_MODES.DEFAULT}
+                onChange={() => setMode(RESOLUTION_MODES.DEFAULT)}
+              />
+              <span>Default (1200 × 800)</span>
+            </label>
+            <label className="settings-option">
+              <input
+                type="radio"
+                name="resolution"
+                checked={mode === RESOLUTION_MODES.FULLSCREEN}
+                onChange={() => setMode(RESOLUTION_MODES.FULLSCREEN)}
+              />
+              <span>Browser (Fill screen)</span>
+            </label>
+            <div className="settings-note">
+              Fullscreen uses the current browser size. Use browser fullscreen
+              for the best immersion.
+            </div>
+          </div>
+        </div>
+      )
+    }
+
+    return <div className="window-empty">No content yet.</div>
+  }
 
   return (
     <main className="app">
@@ -31,11 +70,19 @@ export function DesktopScreen() {
               </svg>
             </span>
           </DesktopIcon>
-          <DesktopIcon label="Case Files">
+          <DesktopIcon label="Case Files" onClick={() => openWindow('folder')}>
             <span className="icon-graphic folder" aria-hidden="true">
               <svg viewBox="0 0 64 64" aria-hidden="true">
                 <path d="M8 20a4 4 0 0 1 4-4h14l6 6h20a4 4 0 0 1 4 4v22a4 4 0 0 1-4 4H12a4 4 0 0 1-4-4Z" />
                 <path d="M8 24h48v8H8z" />
+              </svg>
+            </span>
+          </DesktopIcon>
+          <DesktopIcon label="Settings" onClick={() => openWindow('settings')}>
+            <span className="icon-graphic settings" aria-hidden="true">
+              <svg viewBox="0 0 64 64" aria-hidden="true">
+                <circle cx="32" cy="32" r="10" />
+                <path d="M32 6l4 8 9 2-6 7 1 9-8-4-8 4 1-9-6-7 9-2z" />
               </svg>
             </span>
           </DesktopIcon>
@@ -63,7 +110,9 @@ export function DesktopScreen() {
                 onMinimize={() => toggleMinimize(appWindow.id)}
                 onMaximize={() => toggleMaximize(appWindow.id)}
                 onClose={() => closeWindow(appWindow.id)}
-              />
+              >
+                {renderWindowContent(appWindow)}
+              </DesktopWindow>
             )
           })}
         <div className="taskbar">
@@ -83,7 +132,15 @@ export function DesktopScreen() {
                   bringToFront(appWindow.id)
                 }}
               >
-                <span className="taskbar-window-icon">PC</span>
+                <span className="taskbar-window-icon">
+                  {appWindow.type === 'computer'
+                    ? 'PC'
+                    : appWindow.type === 'folder'
+                      ? 'CF'
+                      : appWindow.type === 'settings'
+                        ? 'ST'
+                        : 'APP'}
+                </span>
                 <span className="taskbar-window-label">{appWindow.title}</span>
               </button>
             ))}

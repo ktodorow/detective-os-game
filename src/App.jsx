@@ -5,11 +5,21 @@ import { BootScreen } from './screens/BootScreen'
 import { DesktopScreen } from './screens/DesktopScreen'
 import { WelcomeScreen } from './screens/WelcomeScreen'
 import { FLOW_EVENTS, FLOW_STATES, flowReducer } from './state/flowMachine'
+import { ResolutionProvider } from './state/resolutionContext'
 
 const BLACKOUT_DELAY = 2000
+const hasWindow = typeof window !== 'undefined'
+const devSkipBoot =
+  import.meta.env.DEV &&
+  (import.meta.env.VITE_DEV_SKIP_BOOT === 'true' ||
+    (hasWindow &&
+      new URLSearchParams(window.location.search).has('devDesktop')))
 
 function App() {
-  const [screen, dispatch] = useReducer(flowReducer, FLOW_STATES.BOOT)
+  const [screen, dispatch] = useReducer(
+    flowReducer,
+    devSkipBoot ? FLOW_STATES.DESKTOP : FLOW_STATES.BOOT
+  )
 
   useEffect(() => {
     if (screen !== FLOW_STATES.POST_BOOT) return
@@ -24,27 +34,29 @@ function App() {
     dispatch({ type: FLOW_EVENTS.BOOT_COMPLETE })
   }
 
-  if (screen === FLOW_STATES.DESKTOP) {
-    return <DesktopScreen />
-  }
-
-  if (screen === FLOW_STATES.WELCOME) {
-    return (
-      <WelcomeScreen
-        onLoginSuccess={() => dispatch({ type: FLOW_EVENTS.LOGIN_SUCCESS })}
-      />
-    )
-  }
+  let content = <BootScreen onComplete={handleBootComplete} />
 
   if (screen === FLOW_STATES.BLACKOUT) {
-    return (
+    content = (
       <BlackoutScreen
         onComplete={() => dispatch({ type: FLOW_EVENTS.SHOW_WELCOME })}
       />
     )
   }
 
-  return <BootScreen onComplete={handleBootComplete} />
+  if (screen === FLOW_STATES.WELCOME) {
+    content = (
+      <WelcomeScreen
+        onLoginSuccess={() => dispatch({ type: FLOW_EVENTS.LOGIN_SUCCESS })}
+      />
+    )
+  }
+
+  if (screen === FLOW_STATES.DESKTOP) {
+    content = <DesktopScreen />
+  }
+
+  return <ResolutionProvider>{content}</ResolutionProvider>
 }
 
 export default App

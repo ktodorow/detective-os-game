@@ -75,6 +75,10 @@
   background: linear-gradient(135deg, #e6eef6, #b7c4d6);
 }
 
+.icon-graphic.settings {
+  background: linear-gradient(135deg, #e0e4f8, #a9b6ff);
+}
+
 .icon-label {
   font-size: 0.95rem;
 }
@@ -198,6 +202,50 @@
 
 .window-empty {
   opacity: 0.7;
+}
+
+.settings-panel {
+  width: 100%;
+  height: 100%;
+  padding: 20px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.settings-title {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.settings-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  color: #303030;
+}
+
+.settings-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.settings-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.92rem;
+}
+
+.settings-option input {
+  accent-color: #4c68ff;
+}
+
+.settings-note {
+  font-size: 0.82rem;
+  color: #5a5a5a;
+  line-height: 1.4;
 }
 
 .taskbar {

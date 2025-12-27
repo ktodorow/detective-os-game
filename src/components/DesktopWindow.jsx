@@ -20,7 +20,8 @@ export function DesktopWindow({
   onResizeStart,
   onMinimize,
   onMaximize,
-  onClose
+  onClose,
+  children
 }) {
   return (
     <div
@@ -68,9 +69,7 @@ export function DesktopWindow({
           </WindowControlButton>
         </div>
       </div>
-      <div className="window-body">
-        <div className="window-empty">No content yet.</div>
-      </div>
+      <div className="window-body">{children}</div>
       <div
         className="window-resizer"
         onMouseDown={(event) => {
