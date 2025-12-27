@@ -52,6 +52,9 @@ function App() {
   const [loginStatus, setLoginStatus] = useState('idle')
   const [fadeToDesktop, setFadeToDesktop] = useState(false)
   const [showDesktop, setShowDesktop] = useState(false)
+  const [isComputerOpen, setIsComputerOpen] = useState(false)
+  const [isComputerMinimized, setIsComputerMinimized] = useState(false)
+  const [isComputerMaximized, setIsComputerMaximized] = useState(false)
   const bodyRef = useRef(null)
   const audioRef = useRef(null)
   const welcomeAudioRef = useRef(null)
@@ -206,12 +209,32 @@ function App() {
     }
   }
 
+  const openComputerWindow = () => {
+    setIsComputerOpen(true)
+    setIsComputerMinimized(false)
+  }
+
+  const closeComputerWindow = () => {
+    setIsComputerOpen(false)
+    setIsComputerMinimized(false)
+    setIsComputerMaximized(false)
+  }
+
+  const toggleComputerMinimize = () => {
+    setIsComputerMinimized((prev) => !prev)
+  }
+
+  const toggleComputerMaximize = () => {
+    setIsComputerMaximized((prev) => !prev)
+    setIsComputerMinimized(false)
+  }
+
   if (showDesktop) {
     return (
       <main className="app">
         <div className="viewport desktop-screen">
           <div className="desktop-icons">
-            <button className="desktop-icon" type="button">
+            <button className="desktop-icon" type="button" onClick={openComputerWindow}>
               <span className="icon-graphic computer" aria-hidden="true">
                 <svg viewBox="0 0 64 64" aria-hidden="true">
                   <rect x="8" y="10" width="48" height="32" rx="3" />
@@ -232,10 +255,63 @@ function App() {
               <span className="icon-label">Case Files</span>
             </button>
           </div>
+          {isComputerOpen && !isComputerMinimized ? (
+            <div
+              className={`desktop-window ${
+                isComputerMaximized ? 'is-maximized' : ''
+              }`}
+            >
+              <div className="window-titlebar">
+                <div className="window-title">My Computer</div>
+                <div className="window-controls">
+                  <button
+                    type="button"
+                    onClick={toggleComputerMinimize}
+                    aria-label="Minimize window"
+                  >
+                    _
+                  </button>
+                  <button
+                    type="button"
+                    onClick={toggleComputerMaximize}
+                    aria-label={
+                      isComputerMaximized ? 'Restore window' : 'Maximize window'
+                    }
+                  >
+                    []
+                  </button>
+                  <button
+                    type="button"
+                    onClick={closeComputerWindow}
+                    aria-label="Close window"
+                  >
+                    X
+                  </button>
+                </div>
+              </div>
+              <div className="window-body">
+                <div className="window-empty">No content yet.</div>
+              </div>
+            </div>
+          ) : null}
           <div className="taskbar">
             <button className="start-button" type="button" aria-label="Start">
               <img src="/detective-face.svg" alt="" aria-hidden="true" />
             </button>
+            <div className="taskbar-windows">
+              {isComputerOpen ? (
+                <button
+                  className={`taskbar-window ${
+                    isComputerMinimized ? 'is-minimized' : 'is-active'
+                  }`}
+                  type="button"
+                  onClick={toggleComputerMinimize}
+                >
+                  <span className="taskbar-window-icon">PC</span>
+                  <span className="taskbar-window-label">Computer</span>
+                </button>
+              ) : null}
+            </div>
             <div className="taskbar-icons" aria-hidden="true">
               <div className="taskbar-icon app-blue">SV</div>
               <div className="taskbar-icon app-amber">EV</div>
