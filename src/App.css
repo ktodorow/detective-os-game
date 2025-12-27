@@ -489,24 +489,40 @@
   gap: 6px;
 }
 
-.window-controls button {
-  width: 26px;
-  height: 22px;
-  border-radius: 6px;
+.window-control-button {
+  width: 28px;
+  height: 24px;
+  border-radius: 7px;
   border: 1px solid rgba(20, 20, 20, 0.2);
-  background: #fefefe;
-  font-size: 0.75rem;
+  background: linear-gradient(135deg, #ffffff, #e5e5e5);
   cursor: pointer;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.18);
+  display: grid;
+  place-items: center;
+  padding: 0;
 }
 
-.window-controls button:hover {
-  background: #ececec;
+.window-control-button svg {
+  width: 14px;
+  height: 14px;
+  stroke: #1c1c1c;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
 }
 
-.window-controls button:last-child {
-  background: #f2c9c9;
+.window-control-button:hover {
+  background: linear-gradient(135deg, #f9f9f9, #dcdcdc);
+}
+
+.window-control-button.is-close {
+  background: linear-gradient(135deg, #ffd8d8, #f1aaaa);
   border-color: rgba(120, 50, 50, 0.35);
+}
+
+.window-control-button.is-close svg {
+  stroke: #5a1f1f;
 }
 
 .window-body {

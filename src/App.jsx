@@ -350,7 +350,6 @@ function App() {
     return (
       <main className="app">
         <div className="viewport desktop-screen" ref={viewportRef}>
-          <div className="desktop-header">Desktop</div>
           <div className="desktop-icons">
             <button
               className="desktop-icon"
@@ -411,8 +410,11 @@ function App() {
                         onClick={() => toggleWindowMinimize(appWindow.id)}
                         onMouseDown={(event) => event.stopPropagation()}
                         aria-label="Minimize window"
+                        className="window-control-button"
                       >
-                        _
+                        <svg viewBox="0 0 16 16" aria-hidden="true">
+                          <line x1="3" y1="12" x2="13" y2="12" />
+                        </svg>
                       </button>
                       <button
                         type="button"
@@ -423,16 +425,30 @@ function App() {
                             ? 'Restore window'
                             : 'Maximize window'
                         }
+                        className="window-control-button"
                       >
-                        []
+                        {appWindow.isMaximized ? (
+                          <svg viewBox="0 0 16 16" aria-hidden="true">
+                            <rect x="3" y="5" width="8" height="8" rx="1" />
+                            <path d="M6 3h7v7" />
+                          </svg>
+                        ) : (
+                          <svg viewBox="0 0 16 16" aria-hidden="true">
+                            <rect x="3" y="3" width="10" height="10" rx="1" />
+                          </svg>
+                        )}
                       </button>
                       <button
                         type="button"
                         onClick={() => closeWindow(appWindow.id)}
                         onMouseDown={(event) => event.stopPropagation()}
                         aria-label="Close window"
+                        className="window-control-button is-close"
                       >
-                        X
+                        <svg viewBox="0 0 16 16" aria-hidden="true">
+                          <line x1="4" y1="4" x2="12" y2="12" />
+                          <line x1="12" y1="4" x2="4" y2="12" />
+                        </svg>
                       </button>
                     </div>
                   </div>
@@ -466,8 +482,6 @@ function App() {
               ))}
             </div>
             <div className="taskbar-icons" aria-hidden="true">
-              <div className="taskbar-icon app-blue">SV</div>
-              <div className="taskbar-icon app-amber">EV</div>
               <div className="taskbar-icon app-green">NB</div>
               <div className="taskbar-icon app-slate">DM</div>
             </div>
