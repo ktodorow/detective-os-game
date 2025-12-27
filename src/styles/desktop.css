@@ -248,6 +248,29 @@
   line-height: 1.4;
 }
 
+.settings-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.settings-button {
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(50, 50, 50, 0.25);
+  background: linear-gradient(135deg, #fefefe, #dcdcdc);
+  font-size: 0.9rem;
+  cursor: pointer;
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.12);
+}
+
+.settings-button:disabled {
+  opacity: 0.6;
+  cursor: default;
+  box-shadow: none;
+}
+
 .taskbar {
   position: absolute;
   left: 0;

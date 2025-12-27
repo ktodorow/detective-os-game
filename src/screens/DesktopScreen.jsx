@@ -7,7 +7,13 @@ import '../styles/desktop.css'
 
 export function DesktopScreen() {
   const viewportRef = useRef(null)
-  const { mode, setMode } = useResolution()
+  const {
+    mode,
+    setMode,
+    canFullscreen,
+    isSystemFullscreen,
+    toggleSystemFullscreen
+  } = useResolution()
   const {
     windows,
     openWindow,
@@ -45,8 +51,28 @@ export function DesktopScreen() {
               <span>Browser (Fill screen)</span>
             </label>
             <div className="settings-note">
-              Fullscreen uses the current browser size. Use browser fullscreen
-              for the best immersion.
+              Fill mode uses the current browser size.
+            </div>
+          </div>
+          <div className="settings-group">
+            <div className="settings-label">Native Fullscreen</div>
+            <div className="settings-row">
+              <button
+                className="settings-button"
+                type="button"
+                onClick={() => {
+                  setMode(RESOLUTION_MODES.FULLSCREEN)
+                  toggleSystemFullscreen()
+                }}
+                disabled={!canFullscreen}
+              >
+                {isSystemFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
+              </button>
+              <span className="settings-note">
+                {canFullscreen
+                  ? 'Removes browser UI for true fullscreen.'
+                  : 'Fullscreen is not available in this browser.'}
+              </span>
             </div>
           </div>
         </div>

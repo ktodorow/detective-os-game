@@ -19,6 +19,9 @@ const FULLSCREEN_DIMENSIONS = {
 
 export function ResolutionProvider({ children }) {
   const [mode, setMode] = useState(RESOLUTION_MODES.DEFAULT)
+  const [isSystemFullscreen, setIsSystemFullscreen] = useState(false)
+  const canFullscreen =
+    typeof document !== 'undefined' && document.fullscreenEnabled
 
   useEffect(() => {
     const root = document.documentElement
@@ -36,7 +39,57 @@ export function ResolutionProvider({ children }) {
     )
   }, [mode])
 
-  const value = useMemo(() => ({ mode, setMode }), [mode])
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsSystemFullscreen(Boolean(document.fullscreenElement))
+    }
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange)
+    handleFullscreenChange()
+
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange)
+    }
+  }, [])
+
+  const enterSystemFullscreen = async () => {
+    if (!canFullscreen || document.fullscreenElement) return
+    try {
+      await document.documentElement.requestFullscreen()
+    } catch {
+      // Ignore fullscreen errors (permissions/user gesture).
+    }
+  }
+
+  const exitSystemFullscreen = async () => {
+    if (!document.fullscreenElement) return
+    try {
+      await document.exitFullscreen()
+    } catch {
+      // Ignore fullscreen errors (permissions/user gesture).
+    }
+  }
+
+  const toggleSystemFullscreen = () => {
+    if (document.fullscreenElement) {
+      exitSystemFullscreen()
+      return
+    }
+    enterSystemFullscreen()
+  }
+
+  const value = useMemo(
+    () => ({
+      mode,
+      setMode,
+      canFullscreen,
+      isSystemFullscreen,
+      enterSystemFullscreen,
+      exitSystemFullscreen,
+      toggleSystemFullscreen
+    }),
+    [canFullscreen, isSystemFullscreen, mode]
+  )
 
   return (
     <ResolutionContext.Provider value={value}>
