@@ -42,7 +42,7 @@ const bootDeviceIndex = bootLines.findIndex((line) =>
 function App() {
   const [visibleCount, setVisibleCount] = useState(0)
   const [isComplete, setIsComplete] = useState(false)
-  const [flashVisible, setFlashVisible] = useState(true)
+  const [flashVisible, setFlashVisible] = useState(false)
   const [bootStarted, setBootStarted] = useState(false)
   const [showBlackout, setShowBlackout] = useState(false)
   const [showWelcome, setShowWelcome] = useState(false)
@@ -53,12 +53,20 @@ function App() {
   const welcomeAudioRef = useRef(null)
 
   useEffect(() => {
-    const timeout = setTimeout(() => {
+    const blackDelay = 1000
+    const flashDuration = 600
+    const flashTimeout = setTimeout(() => {
+      setFlashVisible(true)
+    }, blackDelay)
+    const bootTimeout = setTimeout(() => {
       setFlashVisible(false)
       setBootStarted(true)
-    }, 1000)
+    }, blackDelay + flashDuration)
 
-    return () => clearTimeout(timeout)
+    return () => {
+      clearTimeout(flashTimeout)
+      clearTimeout(bootTimeout)
+    }
   }, [])
 
   useEffect(() => {
@@ -205,19 +213,21 @@ function App() {
     <main className="app">
       <div className="viewport bios-screen">
         {flashVisible ? <div className="boot-flash" aria-hidden="true" /> : null}
-        <section className="terminal">
-          <div className="terminal-body" ref={bodyRef}>
-            {bootLines.slice(0, visibleCount).map((line, index) => (
-              <div className="boot-line" key={`${line}-${index}`}>
-                {line}
+        {bootStarted ? (
+          <section className="terminal">
+            <div className="terminal-body" ref={bodyRef}>
+              {bootLines.slice(0, visibleCount).map((line, index) => (
+                <div className="boot-line" key={`${line}-${index}`}>
+                  {line}
+                </div>
+              ))}
+              <div className="boot-line cursor-line">
+                {isComplete ? 'Boot sequence complete' : 'Booting'}
+                <span className="cursor" aria-hidden="true" />
               </div>
-            ))}
-            <div className="boot-line cursor-line">
-              {isComplete ? 'Boot sequence complete' : 'Booting'}
-              <span className="cursor" aria-hidden="true" />
             </div>
-          </div>
-        </section>
+          </section>
+        ) : null}
         <audio
           ref={audioRef}
           src="/audio/old90sbootupsound.mp3"
