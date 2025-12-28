@@ -1,4 +1,5 @@
-import { useRef } from 'react'
+import { useState } from 'react'
+import { FileDialog } from '../components/FileDialog'
 import { RESOLUTION_MODES } from '../state/resolutionContext'
 
 const EmptyState = () => <div className="window-empty">No content yet.</div>
@@ -35,99 +36,216 @@ const NotepadIcon = () => (
   </svg>
 )
 
-const renderSettings = (_window, { resolution }) => (
-  <div className="settings-panel">
-    <div className="settings-title">Display</div>
-    <div className="settings-group">
-      <div className="settings-label">Resolution</div>
-      <label className="settings-option">
-        <input
-          type="radio"
-          name="resolution"
-          checked={resolution.mode === RESOLUTION_MODES.DEFAULT}
-          onChange={() => resolution.setMode(RESOLUTION_MODES.DEFAULT)}
-        />
-        <span>Default (1200 × 800)</span>
-      </label>
-      <label className="settings-option">
-        <input
-          type="radio"
-          name="resolution"
-          checked={resolution.mode === RESOLUTION_MODES.FULLSCREEN}
-          onChange={() => resolution.setMode(RESOLUTION_MODES.FULLSCREEN)}
-        />
-        <span>Browser (Fill screen)</span>
-      </label>
-      <div className="settings-note">Fill mode uses the current browser size.</div>
-    </div>
-    <div className="settings-group">
-      <div className="settings-label">Native Fullscreen</div>
-      <div className="settings-row">
-        <button
-          className="settings-button"
-          type="button"
-          onClick={() => {
-            resolution.setMode(RESOLUTION_MODES.FULLSCREEN)
-            resolution.toggleSystemFullscreen()
-          }}
-          disabled={!resolution.canFullscreen}
-        >
-          {resolution.isSystemFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
-        </button>
-        <span className="settings-note">
-          {resolution.canFullscreen
-            ? 'Removes browser UI for true fullscreen.'
-            : 'Fullscreen is not available in this browser.'}
-        </span>
-      </div>
-    </div>
-  </div>
-)
+const SettingsWindow = ({ resolution }) => {
+  const [showResetConfirm, setShowResetConfirm] = useState(false)
+  const [isResetting, setIsResetting] = useState(false)
 
-const downloadText = (filename, text) => {
-  const blob = new Blob([text], { type: 'text/plain' })
-  const url = URL.createObjectURL(blob)
-  const anchor = document.createElement('a')
-  anchor.href = url
-  anchor.download = filename
-  document.body.appendChild(anchor)
-  anchor.click()
-  anchor.remove()
-  URL.revokeObjectURL(url)
-}
-
-const NotepadWindow = ({ appWindow, actions }) => {
-  const inputRef = useRef(null)
-  const content = appWindow.content ?? ''
-  const filename = appWindow.filename ?? 'Untitled.txt'
-
-  const handleOpen = () => {
-    inputRef.current?.click()
+  const handleFactoryReset = () => {
+    if (typeof window === 'undefined') return
+    setShowResetConfirm(false)
+    setIsResetting(true)
+    setTimeout(() => {
+      window.localStorage.clear()
+      window.location.reload()
+    }, 3500)
   }
 
-  const handleFileChange = (event) => {
-    const file = event.target.files?.[0]
-    if (!file) return
-    const reader = new FileReader()
-    reader.onload = () => {
-      actions.updateWindow(appWindow.id, {
-        content: typeof reader.result === 'string' ? reader.result : '',
-        filename: file.name
-      })
-    }
-    reader.readAsText(file)
-    event.target.value = ''
+  return (
+    <div className="settings-panel">
+      <div className="settings-title">Display</div>
+      <div className="settings-group">
+        <div className="settings-label">Resolution</div>
+        <label className="settings-option">
+          <input
+            type="radio"
+            name="resolution"
+            checked={resolution.mode === RESOLUTION_MODES.DEFAULT}
+            onChange={() => resolution.setMode(RESOLUTION_MODES.DEFAULT)}
+          />
+          <span>Default (1200 × 800)</span>
+        </label>
+        <label className="settings-option">
+          <input
+            type="radio"
+            name="resolution"
+            checked={resolution.mode === RESOLUTION_MODES.FULLSCREEN}
+            onChange={() => resolution.setMode(RESOLUTION_MODES.FULLSCREEN)}
+          />
+          <span>Browser (Fill screen)</span>
+        </label>
+        <div className="settings-note">
+          Fill mode uses the current browser size.
+        </div>
+      </div>
+      <div className="settings-group">
+        <div className="settings-label">Native Fullscreen</div>
+        <div className="settings-row">
+          <button
+            className="settings-button"
+            type="button"
+            onClick={() => {
+              resolution.setMode(RESOLUTION_MODES.FULLSCREEN)
+              resolution.toggleSystemFullscreen()
+            }}
+            disabled={!resolution.canFullscreen}
+          >
+            {resolution.isSystemFullscreen
+              ? 'Exit Fullscreen'
+              : 'Enter Fullscreen'}
+          </button>
+          <span className="settings-note">
+            {resolution.canFullscreen
+              ? 'Removes browser UI for true fullscreen.'
+              : 'Fullscreen is not available in this browser.'}
+          </span>
+        </div>
+      </div>
+      <div className="settings-group">
+        <div className="settings-label">Data</div>
+        <div className="settings-row">
+          <button
+            className="settings-button settings-danger"
+            type="button"
+            onClick={() => setShowResetConfirm(true)}
+          >
+            Factory Reset
+          </button>
+          <span className="settings-note">
+            Deletes all saved files and settings.
+          </span>
+        </div>
+      </div>
+      {showResetConfirm ? (
+        <div className="settings-reset-overlay">
+          <div className="settings-reset-card" role="dialog" aria-modal="true">
+            <div className="settings-reset-title">Factory Reset</div>
+            <div className="settings-reset-text">
+              This will permanently delete all game data, files, and settings
+              from this device. There is no undo.
+            </div>
+            <div className="settings-reset-actions">
+              <button
+                type="button"
+                onClick={() => setShowResetConfirm(false)}
+              >
+                No, cancel
+              </button>
+              <button
+                type="button"
+                className="is-danger"
+                onClick={handleFactoryReset}
+              >
+                Yes, delete everything
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+      {isResetting ? (
+        <div className="settings-reset-overlay">
+          <div className="settings-reset-card settings-reset-loading">
+            <div className="settings-reset-title">
+              Deleting and cleaning up data...
+            </div>
+            <div className="settings-reset-spinner" aria-hidden="true" />
+            <div className="settings-reset-text">
+              Please wait. This will take a moment.
+            </div>
+          </div>
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
+const renderSettings = (_window, { resolution }) => (
+  <SettingsWindow resolution={resolution} />
+)
+
+const getDirectoryPath = (path) => {
+  if (!path) return '/home/Desktop'
+  const parts = path.split('/').filter(Boolean)
+  if (parts.length <= 1) return '/'
+  return `/${parts.slice(0, -1).join('/')}`
+}
+
+const getBasename = (path) => {
+  const parts = path.split('/').filter(Boolean)
+  return parts[parts.length - 1] ?? 'Untitled.txt'
+}
+
+const ensureTxtExtension = (name) => {
+  const trimmed = name.trim()
+  if (!trimmed) return 'Untitled.txt'
+  const lower = trimmed.toLowerCase()
+  if (lower.endsWith('.txt')) return trimmed
+  const dotIndex = trimmed.lastIndexOf('.')
+  if (dotIndex > 0) {
+    return `${trimmed.slice(0, dotIndex)}.txt`
+  }
+  return `${trimmed}.txt`
+}
+
+const NotepadWindow = ({ appWindow, actions, filesystem }) => {
+  const content = appWindow.content ?? ''
+  const filename = appWindow.filename ?? 'Untitled.txt'
+  const filePath = appWindow.path
+  const [dialog, setDialog] = useState(null)
+
+  const handleOpen = () => {
+    setDialog({
+      mode: 'open',
+      directory: getDirectoryPath(filePath) || '/home/Desktop',
+      filename
+    })
   }
 
   const handleSave = () => {
-    downloadText(filename, content)
+    if (
+      filePath &&
+      filesystem.pathExists(filePath) &&
+      filePath.toLowerCase().endsWith('.txt')
+    ) {
+      const nextName = ensureTxtExtension(filename)
+      filesystem.writeFile(filePath, content)
+      actions.updateWindow(appWindow.id, { filename: nextName, path: filePath })
+      return
+    }
+    setDialog({
+      mode: 'save',
+      directory: getDirectoryPath(filePath) || '/home/Desktop',
+      filename: ensureTxtExtension(filename)
+    })
   }
 
   const handleSaveAs = () => {
-    const nextName = window.prompt('Save as', filename)
-    if (!nextName) return
-    actions.updateWindow(appWindow.id, { filename: nextName })
-    downloadText(nextName, content)
+    setDialog({
+      mode: 'save',
+      directory: getDirectoryPath(filePath) || '/home/Desktop',
+      filename: ensureTxtExtension(filename)
+    })
+  }
+
+  const handleDialogConfirm = (path) => {
+    if (!path) return
+    if (dialog?.mode === 'open') {
+      const nextContent = filesystem.readFile(path)
+      if (nextContent === null) return
+      actions.updateWindow(appWindow.id, {
+        content: nextContent,
+        filename: getBasename(path),
+        path
+      })
+    } else {
+      const nextName = ensureTxtExtension(getBasename(path))
+      const nextPath = filesystem.joinPath(getDirectoryPath(path), nextName)
+      filesystem.writeFile(nextPath, content)
+      actions.updateWindow(appWindow.id, {
+        filename: nextName,
+        path: nextPath
+      })
+    }
+    setDialog(null)
   }
 
   return (
@@ -142,15 +260,6 @@ const NotepadWindow = ({ appWindow, actions }) => {
         <button type="button" onClick={handleSaveAs}>
           Save as
         </button>
-        <input
-          ref={inputRef}
-          type="file"
-          accept=".txt,text/plain"
-          onChange={handleFileChange}
-          className="notepad-file-input"
-          aria-hidden="true"
-          tabIndex={-1}
-        />
       </div>
       <textarea
         className="notepad-textarea"
@@ -160,12 +269,31 @@ const NotepadWindow = ({ appWindow, actions }) => {
         }
         placeholder="Start typing..."
       />
+      {dialog ? (
+        <FileDialog
+          mode={dialog.mode}
+          filesystem={filesystem}
+          initialDirectory={dialog.directory}
+          initialFilename={dialog.filename}
+          normalizeFilename={ensureTxtExtension}
+          filterEntry={(entry) =>
+            entry.type === 'dir' ||
+            entry.name.toLowerCase().endsWith('.txt')
+          }
+          onConfirm={handleDialogConfirm}
+          onCancel={() => setDialog(null)}
+        />
+      ) : null}
     </div>
   )
 }
 
-const renderNotepad = (appWindow, { actions }) => (
-  <NotepadWindow appWindow={appWindow} actions={actions} />
+const renderNotepad = (appWindow, { actions, filesystem }) => (
+  <NotepadWindow
+    appWindow={appWindow}
+    actions={actions}
+    filesystem={filesystem}
+  />
 )
 
 export const APP_LIST = [
@@ -208,7 +336,8 @@ export const APP_LIST = [
       x: 240,
       y: 140,
       content: '',
-      filename: 'Untitled.txt'
+      filename: 'Untitled.txt',
+      path: null
     },
     render: renderNotepad
   },

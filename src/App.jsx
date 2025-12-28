@@ -5,6 +5,7 @@ import { BootScreen } from './screens/BootScreen'
 import { DesktopScreen } from './screens/DesktopScreen'
 import { WelcomeScreen } from './screens/WelcomeScreen'
 import { FLOW_EVENTS, FLOW_STATES, flowReducer } from './state/flowMachine'
+import { FilesystemProvider } from './state/filesystemContext'
 import { ResolutionProvider } from './state/resolutionContext'
 
 const BLACKOUT_DELAY = 2000
@@ -56,7 +57,11 @@ function App() {
     content = <DesktopScreen />
   }
 
-  return <ResolutionProvider>{content}</ResolutionProvider>
+  return (
+    <ResolutionProvider>
+      <FilesystemProvider>{content}</FilesystemProvider>
+    </ResolutionProvider>
+  )
 }
 
 export default App

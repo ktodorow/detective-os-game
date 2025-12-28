@@ -83,6 +83,10 @@
   background: linear-gradient(135deg, #fdf1c9, #f3d37a);
 }
 
+.icon-graphic.file {
+  background: linear-gradient(135deg, #f2f4f7, #c9d1db);
+}
+
 .icon-label {
   font-size: 0.95rem;
 }
@@ -233,6 +237,7 @@
   flex-direction: column;
   align-self: stretch;
   justify-self: stretch;
+  position: relative;
 }
 
 .notepad-toolbar {
@@ -258,8 +263,196 @@
   text-decoration: underline;
 }
 
-.notepad-file-input {
-  display: none;
+.file-dialog-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(20, 20, 20, 0.35);
+  display: grid;
+  place-items: center;
+  z-index: 4;
+}
+
+.file-dialog-panel {
+  width: min(520px, 90%);
+  height: min(420px, 86%);
+  background: #f5f5f5;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  border-radius: 12px;
+  box-shadow: 0 16px 30px rgba(0, 0, 0, 0.3);
+  display: grid;
+  grid-template-rows: auto auto 1fr auto auto;
+  overflow: hidden;
+}
+
+.file-dialog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: linear-gradient(135deg, #f4f4f4, #dbdbdb);
+  font-weight: 600;
+}
+
+.file-dialog-header button {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: none;
+  background: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  font-size: 1.2rem;
+  line-height: 1;
+}
+
+.file-dialog-path {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  background: #ededed;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  font-size: 0.85rem;
+}
+
+.file-dialog-path button {
+  padding: 4px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  background: #ffffff;
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+
+.file-dialog-path span {
+  color: #333;
+  font-family: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Consolas,
+    'Liberation Mono', monospace;
+}
+
+.file-dialog-list {
+  padding: 10px 12px;
+  display: grid;
+  gap: 6px;
+  overflow: auto;
+}
+
+.file-dialog-item {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 10px;
+  align-items: center;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  padding: 6px 8px;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.file-dialog-item.is-selected {
+  background: rgba(70, 110, 255, 0.15);
+  border-color: rgba(70, 110, 255, 0.35);
+}
+
+.file-dialog-icon {
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  font-size: 1.1rem;
+}
+
+.file-dialog-name {
+  font-size: 0.9rem;
+  color: #1e1e1e;
+}
+
+.file-dialog-empty {
+  padding: 10px;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.file-dialog-field {
+  padding: 8px 14px 0;
+  display: grid;
+  gap: 6px;
+  font-size: 0.85rem;
+}
+
+.file-dialog-field input {
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  font-size: 0.9rem;
+}
+
+.file-dialog-actions {
+  padding: 10px 14px 14px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.file-dialog-actions button {
+  padding: 6px 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  background: #ffffff;
+  cursor: pointer;
+}
+
+.file-dialog-actions .is-primary {
+  background: linear-gradient(135deg, #4f6dff, #7d8eff);
+  border-color: rgba(20, 20, 80, 0.2);
+  color: #ffffff;
+}
+
+.file-dialog-confirm {
+  position: absolute;
+  inset: 0;
+  background: rgba(10, 10, 10, 0.45);
+  display: grid;
+  place-items: center;
+}
+
+.file-dialog-confirm-card {
+  width: min(360px, 80%);
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 18px 20px;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.35);
+  display: grid;
+  gap: 10px;
+}
+
+.file-dialog-confirm-title {
+  font-weight: 600;
+}
+
+.file-dialog-confirm-text {
+  font-size: 0.9rem;
+  color: #333;
+}
+
+.file-dialog-confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.file-dialog-confirm-actions button {
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  background: #f2f2f2;
+  cursor: pointer;
+}
+
+.file-dialog-confirm-actions .is-danger {
+  background: linear-gradient(135deg, #ff6a6a, #ff9a9a);
+  border-color: rgba(120, 40, 40, 0.3);
+  color: #fff;
 }
 
 .settings-panel {
@@ -356,6 +549,77 @@
   opacity: 0.6;
   cursor: default;
   box-shadow: none;
+}
+
+.settings-button.settings-danger {
+  background: linear-gradient(135deg, #ff6a6a, #ff9a9a);
+  border-color: rgba(120, 40, 40, 0.3);
+  color: #fff;
+}
+
+.settings-reset-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(10, 10, 10, 0.45);
+  display: grid;
+  place-items: center;
+  z-index: 5;
+}
+
+.settings-reset-card {
+  width: min(420px, 82%);
+  background: #ffffff;
+  border-radius: 14px;
+  padding: 20px 22px;
+  box-shadow: 0 18px 30px rgba(0, 0, 0, 0.35);
+  display: grid;
+  gap: 12px;
+}
+
+.settings-reset-title {
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+.settings-reset-text {
+  font-size: 0.92rem;
+  color: #333;
+  line-height: 1.4;
+}
+
+.settings-reset-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.settings-reset-actions button {
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  background: #f2f2f2;
+  cursor: pointer;
+}
+
+.settings-reset-actions .is-danger {
+  background: linear-gradient(135deg, #ff4d4d, #ff8484);
+  border-color: rgba(120, 40, 40, 0.3);
+  color: #fff;
+}
+
+.settings-reset-loading {
+  align-items: center;
+  text-align: center;
+}
+
+.settings-reset-spinner {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 4px solid rgba(0, 0, 0, 0.15);
+  border-top-color: rgba(60, 60, 60, 0.85);
+  animation: spin 1s linear infinite;
+  justify-self: center;
 }
 
 .taskbar {
@@ -462,5 +726,14 @@
   }
   to {
     opacity: 1;
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
   }
 }

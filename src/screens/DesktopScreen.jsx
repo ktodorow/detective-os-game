@@ -7,6 +7,7 @@ import {
 import { DesktopIcon } from '../components/DesktopIcon'
 import { DesktopWindow } from '../components/DesktopWindow'
 import { useWindowManager } from '../hooks/useWindowManager'
+import { useFilesystem } from '../state/filesystemContext'
 import { useResolution } from '../state/resolutionContext'
 import '../styles/desktop.css'
 
@@ -14,6 +15,7 @@ export function DesktopScreen() {
   const viewportRef = useRef(null)
   const [contextMenu, setContextMenu] = useState(null)
   const resolution = useResolution()
+  const filesystem = useFilesystem()
   const {
     windows,
     openWindow,
@@ -27,6 +29,23 @@ export function DesktopScreen() {
   } = useWindowManager(viewportRef)
   const desktopApps = getDesktopApps()
   const contextMenuApps = getContextMenuApps()
+  const desktopFiles = filesystem
+    .listDir('/home/Desktop')
+    .filter(
+      (entry) =>
+        entry.type === 'file' && entry.name.toLowerCase().endsWith('.txt')
+    )
+    .sort((a, b) => a.name.localeCompare(b.name))
+
+  const handleOpenFile = (entry) => {
+    const fileContent = filesystem.readFile(entry.path)
+    if (fileContent === null) return
+    openWindow('notepad', {
+      content: fileContent,
+      filename: entry.name,
+      path: entry.path
+    })
+  }
 
   useEffect(() => {
     const handleKeyDown = (event) => {
@@ -66,6 +85,7 @@ export function DesktopScreen() {
     }
     return appDefinition.render(appWindow, {
       resolution,
+      filesystem,
       actions: { updateWindow }
     })
   }
@@ -96,6 +116,22 @@ export function DesktopScreen() {
               </DesktopIcon>
             )
           })}
+          {desktopFiles.map((entry) => (
+            <DesktopIcon
+              key={entry.path}
+              label={entry.name}
+              onClick={() => handleOpenFile(entry)}
+            >
+              <span className="icon-graphic file" aria-hidden="true">
+                <svg viewBox="0 0 64 64" aria-hidden="true">
+                  <path d="M18 8h20l12 12v32a4 4 0 0 1-4 4H18a4 4 0 0 1-4-4V12a4 4 0 0 1 4-4z" />
+                  <path d="M38 8v12h12" />
+                  <rect x="22" y="30" width="20" height="4" rx="2" />
+                  <rect x="22" y="40" width="16" height="4" rx="2" />
+                </svg>
+              </span>
+            </DesktopIcon>
+          ))}
         </div>
         {windows
           .filter((appWindow) => !appWindow.isMinimized)

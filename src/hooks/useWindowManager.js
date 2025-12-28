@@ -63,7 +63,7 @@ export function useWindowManager(viewportRef) {
     return { x: nextX, y: nextY, width: nextWidth, height: nextHeight }
   }
 
-  const openWindow = (type) => {
+  const openWindow = (type, overrides = {}) => {
     const appDefinition = getAppDefinition(type)
     if (!appDefinition) return
     const defaults = getWindowDefaults(appDefinition)
@@ -108,8 +108,9 @@ export function useWindowManager(viewportRef) {
           isMaximized: false,
           zIndex,
           normal: null,
-          content,
-          filename: appDefinition.window?.filename ?? null
+          content: overrides.content ?? content,
+          filename: overrides.filename ?? appDefinition.window?.filename ?? null,
+          path: overrides.path ?? appDefinition.window?.path ?? null
         }
       ]
     })
