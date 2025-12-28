@@ -1,3 +1,4 @@
+import { useRef } from 'react'
 import { RESOLUTION_MODES } from '../state/resolutionContext'
 
 const EmptyState = () => <div className="window-empty">No content yet.</div>
@@ -83,15 +84,88 @@ const renderSettings = (_window, { resolution }) => (
   </div>
 )
 
-const renderNotepad = (appWindow, { actions }) => (
-  <textarea
-    className="notepad-textarea"
-    value={appWindow.content ?? ''}
-    onChange={(event) =>
-      actions.updateWindow(appWindow.id, { content: event.target.value })
+const downloadText = (filename, text) => {
+  const blob = new Blob([text], { type: 'text/plain' })
+  const url = URL.createObjectURL(blob)
+  const anchor = document.createElement('a')
+  anchor.href = url
+  anchor.download = filename
+  document.body.appendChild(anchor)
+  anchor.click()
+  anchor.remove()
+  URL.revokeObjectURL(url)
+}
+
+const NotepadWindow = ({ appWindow, actions }) => {
+  const inputRef = useRef(null)
+  const content = appWindow.content ?? ''
+  const filename = appWindow.filename ?? 'Untitled.txt'
+
+  const handleOpen = () => {
+    inputRef.current?.click()
+  }
+
+  const handleFileChange = (event) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = () => {
+      actions.updateWindow(appWindow.id, {
+        content: typeof reader.result === 'string' ? reader.result : '',
+        filename: file.name
+      })
     }
-    placeholder="Start typing..."
-  />
+    reader.readAsText(file)
+    event.target.value = ''
+  }
+
+  const handleSave = () => {
+    downloadText(filename, content)
+  }
+
+  const handleSaveAs = () => {
+    const nextName = window.prompt('Save as', filename)
+    if (!nextName) return
+    actions.updateWindow(appWindow.id, { filename: nextName })
+    downloadText(nextName, content)
+  }
+
+  return (
+    <div className="notepad-shell">
+      <div className="notepad-toolbar">
+        <button type="button" onClick={handleOpen}>
+          Open
+        </button>
+        <button type="button" onClick={handleSave}>
+          Save
+        </button>
+        <button type="button" onClick={handleSaveAs}>
+          Save as
+        </button>
+        <input
+          ref={inputRef}
+          type="file"
+          accept=".txt,text/plain"
+          onChange={handleFileChange}
+          className="notepad-file-input"
+          aria-hidden="true"
+          tabIndex={-1}
+        />
+      </div>
+      <textarea
+        className="notepad-textarea"
+        value={content}
+        onChange={(event) =>
+          actions.updateWindow(appWindow.id, { content: event.target.value })
+        }
+        placeholder="Start typing..."
+      />
+    </div>
+  )
+}
+
+const renderNotepad = (appWindow, { actions }) => (
+  <NotepadWindow appWindow={appWindow} actions={actions} />
 )
 
 export const APP_LIST = [
@@ -128,7 +202,14 @@ export const APP_LIST = [
     showInContextMenu: false,
     taskbarLabel: 'NP',
     maxInstances: 5,
-    window: { width: 640, height: 420, x: 240, y: 140, content: '' },
+    window: {
+      width: 640,
+      height: 420,
+      x: 240,
+      y: 140,
+      content: '',
+      filename: 'Untitled.txt'
+    },
     render: renderNotepad
   },
   {

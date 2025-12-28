@@ -210,7 +210,8 @@
 
 .notepad-textarea {
   width: 100%;
-  height: 100%;
+  flex: 1;
+  height: auto;
   border: none;
   background: transparent;
   padding: 16px;
@@ -223,6 +224,42 @@
   outline: none;
   align-self: stretch;
   justify-self: stretch;
+}
+
+.notepad-shell {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-self: stretch;
+  justify-self: stretch;
+}
+
+.notepad-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 6px 12px;
+  background: #ececec;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.15);
+  font-size: 0.9rem;
+}
+
+.notepad-toolbar button {
+  border: none;
+  background: transparent;
+  padding: 2px 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: #1c1c1c;
+}
+
+.notepad-toolbar button:hover {
+  text-decoration: underline;
+}
+
+.notepad-file-input {
+  display: none;
 }
 
 .settings-panel {

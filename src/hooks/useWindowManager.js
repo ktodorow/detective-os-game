@@ -108,7 +108,8 @@ export function useWindowManager(viewportRef) {
           isMaximized: false,
           zIndex,
           normal: null,
-          content
+          content,
+          filename: appDefinition.window?.filename ?? null
         }
       ]
     })
