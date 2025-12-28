@@ -69,6 +69,13 @@ export function useWindowManager(viewportRef) {
     const defaults = getWindowDefaults(appDefinition)
     const content = getWindowContent(appDefinition)
     const maxInstances = appDefinition.maxInstances ?? 1
+    const title = overrides.title ?? appDefinition.title ?? type
+    const baseRect = {
+      x: overrides.x ?? defaults.x,
+      y: overrides.y ?? defaults.y,
+      width: overrides.width ?? defaults.width,
+      height: overrides.height ?? defaults.height
+    }
     const zIndex = ++windowZRef.current
     setWindows((prev) => {
       const existingOfType = prev.filter((window) => window.type === type)
@@ -90,10 +97,10 @@ export function useWindowManager(viewportRef) {
           : { width: defaults.width, height: defaults.height + TASKBAR_HEIGHT }
       const rect = clampRect(
         {
-          x: defaults.x + offset,
-          y: defaults.y + offset,
-          width: defaults.width,
-          height: defaults.height
+          x: baseRect.x + offset,
+          y: baseRect.y + offset,
+          width: baseRect.width,
+          height: baseRect.height
         },
         bounds
       )
@@ -102,7 +109,7 @@ export function useWindowManager(viewportRef) {
         {
           id,
           type,
-          title: appDefinition.title ?? type,
+          title,
           ...rect,
           isMinimized: false,
           isMaximized: false,
@@ -110,7 +117,8 @@ export function useWindowManager(viewportRef) {
           normal: null,
           content: overrides.content ?? content,
           filename: overrides.filename ?? appDefinition.window?.filename ?? null,
-          path: overrides.path ?? appDefinition.window?.path ?? null
+          path: overrides.path ?? appDefinition.window?.path ?? null,
+          payload: overrides.payload ?? null
         }
       ]
     })

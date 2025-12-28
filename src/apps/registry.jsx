@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { ConfirmDialog } from '../components/ConfirmDialog'
 import { FileDialog } from '../components/FileDialog'
 import { RESOLUTION_MODES } from '../state/resolutionContext'
 
@@ -36,20 +36,7 @@ const NotepadIcon = () => (
   </svg>
 )
 
-const SettingsWindow = ({ resolution }) => {
-  const [showResetConfirm, setShowResetConfirm] = useState(false)
-  const [isResetting, setIsResetting] = useState(false)
-
-  const handleFactoryReset = () => {
-    if (typeof window === 'undefined') return
-    setShowResetConfirm(false)
-    setIsResetting(true)
-    setTimeout(() => {
-      window.localStorage.clear()
-      window.location.reload()
-    }, 3500)
-  }
-
+const SettingsWindow = ({ resolution, ui }) => {
   return (
     <div className="settings-panel">
       <div className="settings-title">Display</div>
@@ -106,7 +93,17 @@ const SettingsWindow = ({ resolution }) => {
           <button
             className="settings-button settings-danger"
             type="button"
-            onClick={() => setShowResetConfirm(true)}
+            onClick={() =>
+              ui?.openConfirm?.({
+                title: 'Factory Reset',
+                message:
+                  'This will permanently delete all game data, files, and settings from this device. There is no undo.',
+                confirmLabel: 'Yes, delete everything',
+                cancelLabel: 'No, cancel',
+                tone: 'danger',
+                onConfirm: ui?.startFactoryReset
+              })
+            }
           >
             Factory Reset
           </button>
@@ -115,51 +112,12 @@ const SettingsWindow = ({ resolution }) => {
           </span>
         </div>
       </div>
-      {showResetConfirm ? (
-        <div className="settings-reset-overlay">
-          <div className="settings-reset-card" role="dialog" aria-modal="true">
-            <div className="settings-reset-title">Factory Reset</div>
-            <div className="settings-reset-text">
-              This will permanently delete all game data, files, and settings
-              from this device. There is no undo.
-            </div>
-            <div className="settings-reset-actions">
-              <button
-                type="button"
-                onClick={() => setShowResetConfirm(false)}
-              >
-                No, cancel
-              </button>
-              <button
-                type="button"
-                className="is-danger"
-                onClick={handleFactoryReset}
-              >
-                Yes, delete everything
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
-      {isResetting ? (
-        <div className="settings-reset-overlay">
-          <div className="settings-reset-card settings-reset-loading">
-            <div className="settings-reset-title">
-              Deleting and cleaning up data...
-            </div>
-            <div className="settings-reset-spinner" aria-hidden="true" />
-            <div className="settings-reset-text">
-              Please wait. This will take a moment.
-            </div>
-          </div>
-        </div>
-      ) : null}
     </div>
   )
 }
 
-const renderSettings = (_window, { resolution }) => (
-  <SettingsWindow resolution={resolution} />
+const renderSettings = (_window, { resolution, ui }) => (
+  <SettingsWindow resolution={resolution} ui={ui} />
 )
 
 const getDirectoryPath = (path) => {
@@ -186,18 +144,46 @@ const ensureTxtExtension = (name) => {
   return `${trimmed}.txt`
 }
 
-const NotepadWindow = ({ appWindow, actions, filesystem }) => {
+const NotepadWindow = ({ appWindow, actions, filesystem, ui }) => {
   const content = appWindow.content ?? ''
   const filename = appWindow.filename ?? 'Untitled.txt'
   const filePath = appWindow.path
-  const [dialog, setDialog] = useState(null)
+
+  const openFileDialog = (mode) => {
+    ui?.openFileDialog?.({
+      mode,
+      initialDirectory: getDirectoryPath(filePath) || '/home/Desktop',
+      initialFilename: ensureTxtExtension(filename),
+      normalizeFilename: ensureTxtExtension,
+      filterEntry: (entry) =>
+        entry.type === 'dir' ||
+        entry.name.toLowerCase().endsWith('.txt'),
+      onConfirm: (path) => {
+        if (!path) return false
+        if (mode === 'open') {
+          const nextContent = filesystem.readFile(path)
+          if (nextContent === null) return false
+          actions.updateWindow(appWindow.id, {
+            content: nextContent,
+            filename: getBasename(path),
+            path
+          })
+          return true
+        }
+        const nextName = ensureTxtExtension(getBasename(path))
+        const nextPath = filesystem.joinPath(getDirectoryPath(path), nextName)
+        filesystem.writeFile(nextPath, content)
+        actions.updateWindow(appWindow.id, {
+          filename: nextName,
+          path: nextPath
+        })
+        return true
+      }
+    })
+  }
 
   const handleOpen = () => {
-    setDialog({
-      mode: 'open',
-      directory: getDirectoryPath(filePath) || '/home/Desktop',
-      filename
-    })
+    openFileDialog('open')
   }
 
   const handleSave = () => {
@@ -211,41 +197,11 @@ const NotepadWindow = ({ appWindow, actions, filesystem }) => {
       actions.updateWindow(appWindow.id, { filename: nextName, path: filePath })
       return
     }
-    setDialog({
-      mode: 'save',
-      directory: getDirectoryPath(filePath) || '/home/Desktop',
-      filename: ensureTxtExtension(filename)
-    })
+    openFileDialog('save')
   }
 
   const handleSaveAs = () => {
-    setDialog({
-      mode: 'save',
-      directory: getDirectoryPath(filePath) || '/home/Desktop',
-      filename: ensureTxtExtension(filename)
-    })
-  }
-
-  const handleDialogConfirm = (path) => {
-    if (!path) return
-    if (dialog?.mode === 'open') {
-      const nextContent = filesystem.readFile(path)
-      if (nextContent === null) return
-      actions.updateWindow(appWindow.id, {
-        content: nextContent,
-        filename: getBasename(path),
-        path
-      })
-    } else {
-      const nextName = ensureTxtExtension(getBasename(path))
-      const nextPath = filesystem.joinPath(getDirectoryPath(path), nextName)
-      filesystem.writeFile(nextPath, content)
-      actions.updateWindow(appWindow.id, {
-        filename: nextName,
-        path: nextPath
-      })
-    }
-    setDialog(null)
+    openFileDialog('save')
   }
 
   return (
@@ -269,31 +225,72 @@ const NotepadWindow = ({ appWindow, actions, filesystem }) => {
         }
         placeholder="Start typing..."
       />
-      {dialog ? (
-        <FileDialog
-          mode={dialog.mode}
-          filesystem={filesystem}
-          initialDirectory={dialog.directory}
-          initialFilename={dialog.filename}
-          normalizeFilename={ensureTxtExtension}
-          filterEntry={(entry) =>
-            entry.type === 'dir' ||
-            entry.name.toLowerCase().endsWith('.txt')
-          }
-          onConfirm={handleDialogConfirm}
-          onCancel={() => setDialog(null)}
-        />
-      ) : null}
     </div>
   )
 }
 
-const renderNotepad = (appWindow, { actions, filesystem }) => (
+const renderNotepad = (appWindow, { actions, filesystem, ui }) => (
   <NotepadWindow
     appWindow={appWindow}
     actions={actions}
     filesystem={filesystem}
+    ui={ui}
   />
+)
+
+const renderFileDialog = (appWindow, { filesystem, actions }) => {
+  const payload = appWindow.payload ?? {}
+  const handleConfirm = (path) => {
+    const result = payload.onConfirm?.(path)
+    if (result === false) return false
+    actions.closeWindow(appWindow.id)
+    return true
+  }
+
+  return (
+    <FileDialog
+      embedded
+      mode={payload.mode ?? 'open'}
+      filesystem={filesystem}
+      initialDirectory={payload.initialDirectory}
+      initialFilename={payload.initialFilename}
+      normalizeFilename={payload.normalizeFilename}
+      filterEntry={payload.filterEntry}
+      onConfirm={handleConfirm}
+      onCancel={() => actions.closeWindow(appWindow.id)}
+      title={payload.title ?? appWindow.title}
+    />
+  )
+}
+
+const renderConfirmDialog = (appWindow, { actions }) => {
+  const payload = appWindow.payload ?? {}
+  const handleConfirm = () => {
+    payload.onConfirm?.()
+    actions.closeWindow(appWindow.id)
+  }
+
+  return (
+    <ConfirmDialog
+      title={payload.title ?? appWindow.title}
+      message={payload.message}
+      confirmLabel={payload.confirmLabel}
+      cancelLabel={payload.cancelLabel}
+      tone={payload.tone}
+      onConfirm={handleConfirm}
+      onCancel={() => actions.closeWindow(appWindow.id)}
+    />
+  )
+}
+
+const renderResetProgress = () => (
+  <div className="reset-progress">
+    <div className="reset-progress-title">Deleting and cleaning up data...</div>
+    <div className="reset-progress-spinner" aria-hidden="true" />
+    <div className="reset-progress-text">
+      Please wait. This will take a moment.
+    </div>
+  </div>
 )
 
 export const APP_LIST = [
@@ -352,6 +349,42 @@ export const APP_LIST = [
     maxInstances: 1,
     window: { width: 460, height: 320, x: 280, y: 160 },
     render: renderSettings
+  },
+  {
+    id: 'fileDialog',
+    title: 'File Dialog',
+    iconClass: null,
+    Icon: null,
+    showOnDesktop: false,
+    showInContextMenu: false,
+    taskbarLabel: 'DLG',
+    maxInstances: 5,
+    window: { width: 540, height: 420, x: 260, y: 140 },
+    render: renderFileDialog
+  },
+  {
+    id: 'confirmDialog',
+    title: 'Confirm',
+    iconClass: null,
+    Icon: null,
+    showOnDesktop: false,
+    showInContextMenu: false,
+    taskbarLabel: 'DLG',
+    maxInstances: 5,
+    window: { width: 420, height: 220, x: 300, y: 180 },
+    render: renderConfirmDialog
+  },
+  {
+    id: 'resetProgress',
+    title: 'Resetting',
+    iconClass: null,
+    Icon: null,
+    showOnDesktop: false,
+    showInContextMenu: false,
+    taskbarLabel: 'SYS',
+    maxInstances: 1,
+    window: { width: 380, height: 200, x: 320, y: 200 },
+    render: renderResetProgress
   }
 ]
 

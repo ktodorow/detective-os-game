@@ -20,6 +20,7 @@ export function FileDialog({
   filesystem,
   initialDirectory = '/home/Desktop',
   initialFilename = '',
+  embedded = false,
   normalizeFilename = (value) => value,
   filterEntry = null,
   onConfirm,
@@ -102,9 +103,13 @@ export function FileDialog({
 
   const canOpen = mode === 'open' && selectedPath
 
-  return (
-    <div className="file-dialog-overlay" role="presentation">
-      <div className="file-dialog-panel" role="dialog" aria-modal="true">
+  const panel = (
+    <div
+      className={`file-dialog-panel ${embedded ? 'is-embedded' : ''}`.trim()}
+      role="dialog"
+      aria-modal={!embedded}
+    >
+      {embedded ? null : (
         <div className="file-dialog-header">
           <div className="file-dialog-title">
             {title ?? (mode === 'open' ? 'Open File' : 'Save File')}
@@ -113,94 +118,100 @@ export function FileDialog({
             ×
           </button>
         </div>
-        <div className="file-dialog-path">
-          <button type="button" onClick={handleUp} disabled={currentDir === '/'}>
-            Up
-          </button>
-          <span>{currentDir}</span>
+      )}
+      <div className="file-dialog-path">
+        <button type="button" onClick={handleUp} disabled={currentDir === '/'}>
+          Up
+        </button>
+        <span>{currentDir}</span>
+      </div>
+      <div className="file-dialog-list">
+        {entries.length ? (
+          entries.map((entry) => (
+            <button
+              key={entry.path}
+              type="button"
+              className={`file-dialog-item ${
+                selectedPath === entry.path ? 'is-selected' : ''
+              }`}
+              onClick={() => handleEntryClick(entry)}
+              onDoubleClick={() => handleOpen(entry)}
+            >
+              <span className={`file-dialog-icon ${entry.type}`}>
+                {entry.type === 'dir' ? '📁' : '📄'}
+              </span>
+              <span className="file-dialog-name">{entry.name}</span>
+            </button>
+          ))
+        ) : (
+          <div className="file-dialog-empty">This folder is empty.</div>
+        )}
+      </div>
+      {mode === 'save' ? (
+        <div className="file-dialog-field">
+          <label htmlFor="save-filename">File name</label>
+          <input
+            id="save-filename"
+            type="text"
+            value={filename}
+            onChange={(event) => setFilename(event.target.value)}
+            placeholder="Untitled.txt"
+          />
         </div>
-        <div className="file-dialog-list">
-          {entries.length ? (
-            entries.map((entry) => (
-              <button
-                key={entry.path}
-                type="button"
-                className={`file-dialog-item ${
-                  selectedPath === entry.path ? 'is-selected' : ''
-                }`}
-                onClick={() => handleEntryClick(entry)}
-                onDoubleClick={() => handleOpen(entry)}
-              >
-                <span className={`file-dialog-icon ${entry.type}`}>
-                  {entry.type === 'dir' ? '📁' : '📄'}
-                </span>
-                <span className="file-dialog-name">{entry.name}</span>
+      ) : null}
+      <div className="file-dialog-actions">
+        <button type="button" onClick={onCancel}>
+          Cancel
+        </button>
+        {mode === 'open' ? (
+          <button
+            type="button"
+            className="is-primary"
+            onClick={() => onConfirm?.(selectedPath)}
+            disabled={!canOpen}
+          >
+            Open
+          </button>
+        ) : (
+          <button type="button" className="is-primary" onClick={handleSave}>
+            Save
+          </button>
+        )}
+      </div>
+      {showOverwrite ? (
+        <div className="file-dialog-confirm">
+          <div className="file-dialog-confirm-card">
+            <div className="file-dialog-confirm-title">
+              Replace existing file?
+            </div>
+            <div className="file-dialog-confirm-text">
+              A file with this name already exists. Do you want to replace it?
+            </div>
+            <div className="file-dialog-confirm-actions">
+              <button type="button" onClick={() => setShowOverwrite(false)}>
+                No
               </button>
-            ))
-          ) : (
-            <div className="file-dialog-empty">This folder is empty.</div>
-          )}
-        </div>
-        {mode === 'save' ? (
-          <div className="file-dialog-field">
-            <label htmlFor="save-filename">File name</label>
-            <input
-              id="save-filename"
-              type="text"
-              value={filename}
-              onChange={(event) => setFilename(event.target.value)}
-              placeholder="Untitled.txt"
-            />
-          </div>
-        ) : null}
-        <div className="file-dialog-actions">
-          <button type="button" onClick={onCancel}>
-            Cancel
-          </button>
-          {mode === 'open' ? (
-            <button
-              type="button"
-              className="is-primary"
-              onClick={() => onConfirm?.(selectedPath)}
-              disabled={!canOpen}
-            >
-              Open
-            </button>
-          ) : (
-            <button
-              type="button"
-              className="is-primary"
-              onClick={handleSave}
-            >
-              Save
-            </button>
-          )}
-        </div>
-        {showOverwrite ? (
-          <div className="file-dialog-confirm">
-            <div className="file-dialog-confirm-card">
-              <div className="file-dialog-confirm-title">
-                Replace existing file?
-              </div>
-              <div className="file-dialog-confirm-text">
-                A file with this name already exists. Do you want to replace it?
-              </div>
-              <div className="file-dialog-confirm-actions">
-                <button type="button" onClick={() => setShowOverwrite(false)}>
-                  No
-                </button>
-                <button
-                  type="button"
-                  className="is-danger"
-                  onClick={handleConfirmOverwrite}
-                >
-                  Yes, replace
-                </button>
-              </div>
+              <button
+                type="button"
+                className="is-danger"
+                onClick={handleConfirmOverwrite}
+              >
+                Yes, replace
+              </button>
             </div>
           </div>
-        ) : null}
-      </div>
+        </div>
+      ) : null}
+    </div>
+  )
+
+  if (embedded) {
+    return <div className="file-dialog-embedded">{panel}</div>
+  }
+
+  return (
+    <div className="file-dialog-overlay" role="presentation">
+      {panel}
     </div>
   )
 }

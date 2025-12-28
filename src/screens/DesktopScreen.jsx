@@ -47,6 +47,41 @@ export function DesktopScreen() {
     })
   }
 
+  const startFactoryReset = () => {
+    if (typeof window === 'undefined') return
+    openWindow('resetProgress', {
+      title: 'Resetting'
+    })
+    setTimeout(() => {
+      window.localStorage.clear()
+      window.location.reload()
+    }, 3500)
+  }
+
+  const openFileDialog = (config) => {
+    openWindow('fileDialog', {
+      title: config.title ?? (config.mode === 'open' ? 'Open File' : 'Save File'),
+      width: config.width ?? 540,
+      height: config.height ?? 420,
+      payload: config
+    })
+  }
+
+  const openConfirm = (config) => {
+    openWindow('confirmDialog', {
+      title: config.title ?? 'Confirm',
+      width: config.width ?? 420,
+      height: config.height ?? 220,
+      payload: config
+    })
+  }
+
+  const ui = {
+    openFileDialog,
+    openConfirm,
+    startFactoryReset
+  }
+
   useEffect(() => {
     const handleKeyDown = (event) => {
       if (event.key === 'Escape') {
@@ -86,7 +121,8 @@ export function DesktopScreen() {
     return appDefinition.render(appWindow, {
       resolution,
       filesystem,
-      actions: { updateWindow }
+      actions: { updateWindow, closeWindow },
+      ui
     })
   }
 
