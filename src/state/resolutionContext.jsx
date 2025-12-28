@@ -18,7 +18,7 @@ const FULLSCREEN_DIMENSIONS = {
 }
 
 export function ResolutionProvider({ children }) {
-  const [mode, setMode] = useState(RESOLUTION_MODES.DEFAULT)
+  const [mode, setMode] = useState(RESOLUTION_MODES.FULLSCREEN)
   const [isSystemFullscreen, setIsSystemFullscreen] = useState(false)
   const canFullscreen =
     typeof document !== 'undefined' && document.fullscreenEnabled

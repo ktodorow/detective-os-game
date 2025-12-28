@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { DesktopIcon } from '../components/DesktopIcon'
 import { DesktopWindow } from '../components/DesktopWindow'
 import { useWindowManager } from '../hooks/useWindowManager'
@@ -7,6 +7,7 @@ import '../styles/desktop.css'
 
 export function DesktopScreen() {
   const viewportRef = useRef(null)
+  const [contextMenu, setContextMenu] = useState(null)
   const {
     mode,
     setMode,
@@ -24,6 +25,36 @@ export function DesktopScreen() {
     startDrag,
     startResize
   } = useWindowManager(viewportRef)
+
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        setContextMenu(null)
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
+
+  const handleContextMenu = (event) => {
+    event.preventDefault()
+    const viewport = viewportRef.current
+    if (!viewport) return
+    const rect = viewport.getBoundingClientRect()
+    const menuWidth = 200
+    const menuHeight = 150
+    const x = event.clientX - rect.left
+    const y = event.clientY - rect.top
+    const clampedX = Math.min(Math.max(x, 0), rect.width - menuWidth)
+    const clampedY = Math.min(Math.max(y, 0), rect.height - menuHeight)
+    setContextMenu({ x: clampedX, y: clampedY })
+  }
+
+  const handleMenuAction = (action) => {
+    action()
+    setContextMenu(null)
+  }
 
   const renderWindowContent = (appWindow) => {
     if (appWindow.type === 'settings') {
@@ -84,7 +115,12 @@ export function DesktopScreen() {
 
   return (
     <main className="app">
-      <div className="viewport desktop-screen" ref={viewportRef}>
+      <div
+        className="viewport desktop-screen"
+        ref={viewportRef}
+        onContextMenu={handleContextMenu}
+        onMouseDown={() => setContextMenu(null)}
+      >
         <div className="desktop-icons">
           <DesktopIcon label="My Computer" onClick={() => openWindow('computer')}>
             <span className="icon-graphic computer" aria-hidden="true">
@@ -101,14 +137,6 @@ export function DesktopScreen() {
               <svg viewBox="0 0 64 64" aria-hidden="true">
                 <path d="M8 20a4 4 0 0 1 4-4h14l6 6h20a4 4 0 0 1 4 4v22a4 4 0 0 1-4 4H12a4 4 0 0 1-4-4Z" />
                 <path d="M8 24h48v8H8z" />
-              </svg>
-            </span>
-          </DesktopIcon>
-          <DesktopIcon label="Settings" onClick={() => openWindow('settings')}>
-            <span className="icon-graphic settings" aria-hidden="true">
-              <svg viewBox="0 0 64 64" aria-hidden="true">
-                <circle cx="32" cy="32" r="10" />
-                <path d="M32 6l4 8 9 2-6 7 1 9-8-4-8 4 1-9-6-7 9-2z" />
               </svg>
             </span>
           </DesktopIcon>
@@ -141,6 +169,20 @@ export function DesktopScreen() {
               </DesktopWindow>
             )
           })}
+        {contextMenu ? (
+          <div
+            className="context-menu"
+            style={{ top: contextMenu.y, left: contextMenu.x }}
+            onMouseDown={(event) => event.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => handleMenuAction(() => openWindow('settings'))}
+            >
+              Open Settings
+            </button>
+          </div>
+        ) : null}
         <div className="taskbar">
           <button className="start-button" type="button" aria-label="Start">
             <img src="/detective-face.svg" alt="" aria-hidden="true" />
