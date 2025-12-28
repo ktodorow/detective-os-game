@@ -79,6 +79,10 @@
   background: linear-gradient(135deg, #e0e4f8, #a9b6ff);
 }
 
+.icon-graphic.notepad {
+  background: linear-gradient(135deg, #fdf1c9, #f3d37a);
+}
+
 .icon-label {
   font-size: 0.95rem;
 }
@@ -202,6 +206,23 @@
 
 .window-empty {
   opacity: 0.7;
+}
+
+.notepad-textarea {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: transparent;
+  padding: 16px;
+  font-family: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Consolas,
+    'Liberation Mono', monospace;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: #1c1c1c;
+  resize: none;
+  outline: none;
+  align-self: stretch;
+  justify-self: stretch;
 }
 
 .settings-panel {

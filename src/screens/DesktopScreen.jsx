@@ -1,20 +1,19 @@
 import { useEffect, useRef, useState } from 'react'
+import {
+  getAppDefinition,
+  getContextMenuApps,
+  getDesktopApps
+} from '../apps/registry'
 import { DesktopIcon } from '../components/DesktopIcon'
 import { DesktopWindow } from '../components/DesktopWindow'
 import { useWindowManager } from '../hooks/useWindowManager'
-import { RESOLUTION_MODES, useResolution } from '../state/resolutionContext'
+import { useResolution } from '../state/resolutionContext'
 import '../styles/desktop.css'
 
 export function DesktopScreen() {
   const viewportRef = useRef(null)
   const [contextMenu, setContextMenu] = useState(null)
-  const {
-    mode,
-    setMode,
-    canFullscreen,
-    isSystemFullscreen,
-    toggleSystemFullscreen
-  } = useResolution()
+  const resolution = useResolution()
   const {
     windows,
     openWindow,
@@ -23,8 +22,11 @@ export function DesktopScreen() {
     toggleMinimize,
     toggleMaximize,
     startDrag,
-    startResize
+    startResize,
+    updateWindow
   } = useWindowManager(viewportRef)
+  const desktopApps = getDesktopApps()
+  const contextMenuApps = getContextMenuApps()
 
   useEffect(() => {
     const handleKeyDown = (event) => {
@@ -39,11 +41,12 @@ export function DesktopScreen() {
 
   const handleContextMenu = (event) => {
     event.preventDefault()
+    if (!contextMenuApps.length) return
     const viewport = viewportRef.current
     if (!viewport) return
     const rect = viewport.getBoundingClientRect()
     const menuWidth = 200
-    const menuHeight = 150
+    const menuHeight = contextMenuApps.length * 38 + 16
     const x = event.clientX - rect.left
     const y = event.clientY - rect.top
     const clampedX = Math.min(Math.max(x, 0), rect.width - menuWidth)
@@ -57,60 +60,14 @@ export function DesktopScreen() {
   }
 
   const renderWindowContent = (appWindow) => {
-    if (appWindow.type === 'settings') {
-      return (
-        <div className="settings-panel">
-          <div className="settings-title">Display</div>
-          <div className="settings-group">
-            <div className="settings-label">Resolution</div>
-            <label className="settings-option">
-              <input
-                type="radio"
-                name="resolution"
-                checked={mode === RESOLUTION_MODES.DEFAULT}
-                onChange={() => setMode(RESOLUTION_MODES.DEFAULT)}
-              />
-              <span>Default (1200 × 800)</span>
-            </label>
-            <label className="settings-option">
-              <input
-                type="radio"
-                name="resolution"
-                checked={mode === RESOLUTION_MODES.FULLSCREEN}
-                onChange={() => setMode(RESOLUTION_MODES.FULLSCREEN)}
-              />
-              <span>Browser (Fill screen)</span>
-            </label>
-            <div className="settings-note">
-              Fill mode uses the current browser size.
-            </div>
-          </div>
-          <div className="settings-group">
-            <div className="settings-label">Native Fullscreen</div>
-            <div className="settings-row">
-              <button
-                className="settings-button"
-                type="button"
-                onClick={() => {
-                  setMode(RESOLUTION_MODES.FULLSCREEN)
-                  toggleSystemFullscreen()
-                }}
-                disabled={!canFullscreen}
-              >
-                {isSystemFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
-              </button>
-              <span className="settings-note">
-                {canFullscreen
-                  ? 'Removes browser UI for true fullscreen.'
-                  : 'Fullscreen is not available in this browser.'}
-              </span>
-            </div>
-          </div>
-        </div>
-      )
+    const appDefinition = getAppDefinition(appWindow.type)
+    if (!appDefinition?.render) {
+      return <div className="window-empty">No content yet.</div>
     }
-
-    return <div className="window-empty">No content yet.</div>
+    return appDefinition.render(appWindow, {
+      resolution,
+      actions: { updateWindow }
+    })
   }
 
   return (
@@ -122,24 +79,23 @@ export function DesktopScreen() {
         onMouseDown={() => setContextMenu(null)}
       >
         <div className="desktop-icons">
-          <DesktopIcon label="My Computer" onClick={() => openWindow('computer')}>
-            <span className="icon-graphic computer" aria-hidden="true">
-              <svg viewBox="0 0 64 64" aria-hidden="true">
-                <rect x="8" y="10" width="48" height="32" rx="3" />
-                <rect x="14" y="16" width="36" height="20" rx="2" />
-                <rect x="26" y="44" width="12" height="4" rx="1" />
-                <rect x="20" y="48" width="24" height="4" rx="1" />
-              </svg>
-            </span>
-          </DesktopIcon>
-          <DesktopIcon label="Case Files" onClick={() => openWindow('folder')}>
-            <span className="icon-graphic folder" aria-hidden="true">
-              <svg viewBox="0 0 64 64" aria-hidden="true">
-                <path d="M8 20a4 4 0 0 1 4-4h14l6 6h20a4 4 0 0 1 4 4v22a4 4 0 0 1-4 4H12a4 4 0 0 1-4-4Z" />
-                <path d="M8 24h48v8H8z" />
-              </svg>
-            </span>
-          </DesktopIcon>
+          {desktopApps.map((app) => {
+            const Icon = app.Icon
+            return (
+              <DesktopIcon
+                key={app.id}
+                label={app.title}
+                onClick={() => openWindow(app.id)}
+              >
+                <span
+                  className={`icon-graphic ${app.iconClass ?? ''}`.trim()}
+                  aria-hidden="true"
+                >
+                  {Icon ? <Icon /> : null}
+                </span>
+              </DesktopIcon>
+            )
+          })}
         </div>
         {windows
           .filter((appWindow) => !appWindow.isMinimized)
@@ -175,12 +131,15 @@ export function DesktopScreen() {
             style={{ top: contextMenu.y, left: contextMenu.x }}
             onMouseDown={(event) => event.stopPropagation()}
           >
-            <button
-              type="button"
-              onClick={() => handleMenuAction(() => openWindow('settings'))}
-            >
-              Open Settings
-            </button>
+            {contextMenuApps.map((app) => (
+              <button
+                key={app.id}
+                type="button"
+                onClick={() => handleMenuAction(() => openWindow(app.id))}
+              >
+                Open {app.title}
+              </button>
+            ))}
           </div>
         ) : null}
         <div className="taskbar">
@@ -201,13 +160,7 @@ export function DesktopScreen() {
                 }}
               >
                 <span className="taskbar-window-icon">
-                  {appWindow.type === 'computer'
-                    ? 'PC'
-                    : appWindow.type === 'folder'
-                      ? 'CF'
-                      : appWindow.type === 'settings'
-                        ? 'ST'
-                        : 'APP'}
+                  {getAppDefinition(appWindow.type)?.taskbarLabel ?? 'APP'}
                 </span>
                 <span className="taskbar-window-label">{appWindow.title}</span>
               </button>

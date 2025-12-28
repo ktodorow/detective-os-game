@@ -1,32 +1,40 @@
 import { useEffect, useRef, useState } from 'react'
-
-const WINDOW_TEMPLATES = {
-  computer: {
-    title: 'My Computer',
-    width: 520,
-    height: 360,
-    x: 220,
-    y: 110
-  },
-  folder: {
-    title: 'Case Files',
-    width: 520,
-    height: 360,
-    x: 260,
-    y: 140
-  },
-  settings: {
-    title: 'Settings',
-    width: 460,
-    height: 320,
-    x: 280,
-    y: 160
-  }
-}
+import { getAppDefinition } from '../apps/registry'
 
 const TASKBAR_HEIGHT = 48
 const MIN_WIDTH = 320
 const MIN_HEIGHT = 220
+const FALLBACK_WINDOW = {
+  width: 520,
+  height: 360,
+  x: 220,
+  y: 110
+}
+
+const getWindowDefaults = (appDefinition) => {
+  const template = appDefinition?.window ?? {}
+  return {
+    width: template.width ?? FALLBACK_WINDOW.width,
+    height: template.height ?? FALLBACK_WINDOW.height,
+    x: template.x ?? FALLBACK_WINDOW.x,
+    y: template.y ?? FALLBACK_WINDOW.y
+  }
+}
+
+const getWindowContent = (appDefinition) => {
+  const content = appDefinition?.window?.content
+  if (content === undefined) return null
+  if (content && typeof content === 'object') {
+    if (typeof structuredClone === 'function') {
+      return structuredClone(content)
+    }
+    if (Array.isArray(content)) {
+      return [...content]
+    }
+    return { ...content }
+  }
+  return content
+}
 
 export function useWindowManager(viewportRef) {
   const [windows, setWindows] = useState([])
@@ -56,14 +64,20 @@ export function useWindowManager(viewportRef) {
   }
 
   const openWindow = (type) => {
-    const template = WINDOW_TEMPLATES[type]
-    if (!template) return
+    const appDefinition = getAppDefinition(type)
+    if (!appDefinition) return
+    const defaults = getWindowDefaults(appDefinition)
+    const content = getWindowContent(appDefinition)
+    const maxInstances = appDefinition.maxInstances ?? 1
     const zIndex = ++windowZRef.current
     setWindows((prev) => {
-      const existing = prev.find((window) => window.type === type)
-      if (existing) {
+      const existingOfType = prev.filter((window) => window.type === type)
+      if (existingOfType.length >= maxInstances) {
+        const topWindow = existingOfType.reduce((best, current) =>
+          current.zIndex > best.zIndex ? current : best
+        )
         return prev.map((window) =>
-          window.type === type
+          window.id === topWindow.id
             ? { ...window, isMinimized: false, zIndex }
             : window
         )
@@ -73,13 +87,13 @@ export function useWindowManager(viewportRef) {
       const bounds =
         viewportSize.width && viewportSize.height
           ? viewportSize
-          : { width: template.width, height: template.height + TASKBAR_HEIGHT }
+          : { width: defaults.width, height: defaults.height + TASKBAR_HEIGHT }
       const rect = clampRect(
         {
-          x: template.x + offset,
-          y: template.y + offset,
-          width: template.width,
-          height: template.height
+          x: defaults.x + offset,
+          y: defaults.y + offset,
+          width: defaults.width,
+          height: defaults.height
         },
         bounds
       )
@@ -88,12 +102,13 @@ export function useWindowManager(viewportRef) {
         {
           id,
           type,
-          title: template.title,
+          title: appDefinition.title ?? type,
           ...rect,
           isMinimized: false,
           isMaximized: false,
           zIndex,
-          normal: null
+          normal: null,
+          content
         }
       ]
     })
@@ -161,12 +176,8 @@ export function useWindowManager(viewportRef) {
       prev.map((window) => {
         if (window.id !== id) return window
         if (window.isMaximized) {
-          const normal = window.normal || {
-            x: 220,
-            y: 110,
-            width: 520,
-            height: 360
-          }
+          const defaults = getWindowDefaults(getAppDefinition(window.type))
+          const normal = window.normal || defaults
           return {
             ...window,
             isMaximized: false,
@@ -188,6 +199,17 @@ export function useWindowManager(viewportRef) {
             height: window.height
           }
         }
+      })
+    )
+  }
+
+  const updateWindow = (id, updates) => {
+    setWindows((prev) =>
+      prev.map((window) => {
+        if (window.id !== id) return window
+        const nextUpdates =
+          typeof updates === 'function' ? updates(window) : updates
+        return { ...window, ...nextUpdates }
       })
     )
   }
@@ -314,6 +336,7 @@ export function useWindowManager(viewportRef) {
     toggleMinimize,
     toggleMaximize,
     startDrag,
-    startResize
+    startResize,
+    updateWindow
   }
 }
