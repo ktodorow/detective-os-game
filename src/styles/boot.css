@@ -31,12 +31,6 @@
   line-height: 1.4;
   height: 100%;
   overflow: auto;
-  scrollbar-width: none;
-}
-
-.terminal-body::-webkit-scrollbar {
-  width: 0;
-  height: 0;
 }
 
 .boot-line {
