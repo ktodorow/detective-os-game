@@ -27,15 +27,14 @@
 }
 
 .desktop-icons {
-  position: relative;
+  position: absolute;
+  inset: 0 0 48px 0;
   z-index: 1;
-  display: grid;
-  gap: 20px;
-  padding: 40px 0 0 32px;
-  width: 180px;
 }
 
 .desktop-icon {
+  position: absolute;
+  width: 96px;
   display: grid;
   place-items: center;
   gap: 8px;
@@ -44,11 +43,17 @@
   color: #f4f4f4;
   text-shadow: 0 2px 6px rgba(0, 0, 0, 0.55);
   cursor: pointer;
+  cursor: grab;
+  user-select: none;
 }
 
 .desktop-icon:focus-visible {
   outline: 2px solid rgba(255, 255, 255, 0.7);
   outline-offset: 6px;
+}
+
+.desktop-icon.is-dragging {
+  cursor: grabbing;
 }
 
 .icon-graphic {

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   getAppDefinition,
   getContextMenuApps,
@@ -14,6 +14,11 @@ import '../styles/desktop.css'
 export function DesktopScreen() {
   const viewportRef = useRef(null)
   const [contextMenu, setContextMenu] = useState(null)
+  const [iconPositions, setIconPositions] = useState({})
+  const [viewportSize, setViewportSize] = useState({ width: 0, height: 0 })
+  const [draggingId, setDraggingId] = useState(null)
+  const draggingRef = useRef(null)
+  const lastDragRef = useRef(null)
   const resolution = useResolution()
   const filesystem = useFilesystem()
   const {
@@ -27,6 +32,13 @@ export function DesktopScreen() {
     startResize,
     updateWindow
   } = useWindowManager(viewportRef)
+
+  const TASKBAR_HEIGHT = 48
+  const ICON_WIDTH = 96
+  const ICON_HEIGHT = 96
+  const ICON_GAP = 20
+  const ICON_PADDING_X = 32
+  const ICON_PADDING_Y = 40
   const desktopApps = getDesktopApps()
   const contextMenuApps = getContextMenuApps()
   const desktopFiles = filesystem
@@ -36,6 +48,175 @@ export function DesktopScreen() {
         entry.type === 'file' && entry.name.toLowerCase().endsWith('.txt')
     )
     .sort((a, b) => a.name.localeCompare(b.name))
+
+  const iconItems = useMemo(() => {
+    const appItems = desktopApps.map((app) => ({
+      id: `app:${app.id}`,
+      type: 'app',
+      app,
+      label: app.title
+    }))
+    const fileItems = desktopFiles.map((entry) => ({
+      id: `file:${entry.path}`,
+      type: 'file',
+      entry,
+      label: entry.name
+    }))
+    return [...appItems, ...fileItems]
+  }, [desktopApps, desktopFiles])
+
+  const getDefaultPosition = (index) => {
+    const availableHeight = Math.max(
+      viewportSize.height - TASKBAR_HEIGHT - ICON_PADDING_Y,
+      ICON_HEIGHT
+    )
+    const maxRows = Math.max(
+      Math.floor(availableHeight / (ICON_HEIGHT + ICON_GAP)),
+      1
+    )
+    const row = index % maxRows
+    const column = Math.floor(index / maxRows)
+    return {
+      x: ICON_PADDING_X + column * (ICON_WIDTH + ICON_GAP),
+      y: ICON_PADDING_Y + row * (ICON_HEIGHT + ICON_GAP)
+    }
+  }
+
+  const clampPosition = (position) => {
+    const maxX = Math.max(viewportSize.width - ICON_WIDTH, 0)
+    const maxY = Math.max(
+      viewportSize.height - TASKBAR_HEIGHT - ICON_HEIGHT,
+      0
+    )
+    return {
+      x: Math.min(Math.max(position.x, 0), maxX),
+      y: Math.min(Math.max(position.y, 0), maxY)
+    }
+  }
+
+  useEffect(() => {
+    const viewport = viewportRef.current
+    if (!viewport || typeof ResizeObserver === 'undefined') return
+    const observer = new ResizeObserver((entries) => {
+      const entry = entries[0]
+      if (!entry) return
+      const { width, height } = entry.contentRect
+      setViewportSize({ width, height })
+    })
+    observer.observe(viewport)
+
+    return () => observer.disconnect()
+  }, [])
+
+  useEffect(() => {
+    if (!viewportSize.width || !viewportSize.height) return
+    setIconPositions((prev) => {
+      const next = { ...prev }
+      let changed = false
+      const idSet = new Set(iconItems.map((item) => item.id))
+
+      iconItems.forEach((item, index) => {
+        if (!next[item.id]) {
+          next[item.id] = clampPosition(getDefaultPosition(index))
+          changed = true
+        }
+      })
+
+      Object.keys(next).forEach((key) => {
+        if (!idSet.has(key)) {
+          delete next[key]
+          changed = true
+        }
+      })
+
+      return changed ? next : prev
+    })
+  }, [iconItems, viewportSize])
+
+  useEffect(() => {
+    if (!viewportSize.width || !viewportSize.height) return
+    setIconPositions((prev) => {
+      const next = {}
+      let changed = false
+      Object.entries(prev).forEach(([key, position]) => {
+        const clamped = clampPosition(position)
+        next[key] = clamped
+        if (clamped.x !== position.x || clamped.y !== position.y) {
+          changed = true
+        }
+      })
+      return changed ? next : prev
+    })
+  }, [viewportSize])
+
+  useEffect(() => {
+    if (!draggingRef.current) return
+
+    const handleMouseMove = (event) => {
+      const viewport = viewportRef.current
+      if (!viewport) return
+      const rect = viewport.getBoundingClientRect()
+      const current = draggingRef.current
+      const nextX = event.clientX - rect.left - current.offsetX
+      const nextY = event.clientY - rect.top - current.offsetY
+      if (
+        !current.moved &&
+        (Math.abs(nextX - current.startX) > 3 ||
+          Math.abs(nextY - current.startY) > 3)
+      ) {
+        current.moved = true
+      }
+      const clamped = clampPosition({ x: nextX, y: nextY })
+      setIconPositions((prev) => ({
+        ...prev,
+        [current.id]: clamped
+      }))
+    }
+
+    const handleMouseUp = () => {
+      const current = draggingRef.current
+      if (current?.moved) {
+        lastDragRef.current = { id: current.id, time: Date.now() }
+      }
+      draggingRef.current = null
+      setDraggingId(null)
+    }
+
+    window.addEventListener('mousemove', handleMouseMove)
+    window.addEventListener('mouseup', handleMouseUp)
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove)
+      window.removeEventListener('mouseup', handleMouseUp)
+    }
+  }, [draggingId, viewportSize])
+
+  const handleIconMouseDown = (event, id) => {
+    if (event.button !== 0) return
+    event.preventDefault()
+    const viewport = viewportRef.current
+    if (!viewport) return
+    const rect = viewport.getBoundingClientRect()
+    const position = iconPositions[id] ?? { x: 0, y: 0 }
+    draggingRef.current = {
+      id,
+      offsetX: event.clientX - rect.left - position.x,
+      offsetY: event.clientY - rect.top - position.y,
+      startX: position.x,
+      startY: position.y,
+      moved: false
+    }
+    setDraggingId(id)
+  }
+
+  const handleIconClick = (id, action) => {
+    const lastDrag = lastDragRef.current
+    if (lastDrag && lastDrag.id === id && Date.now() - lastDrag.time < 200) {
+      lastDragRef.current = null
+      return
+    }
+    action()
+  }
 
   const handleOpenFile = (entry) => {
     const fileContent = filesystem.readFile(entry.path)
@@ -135,39 +316,54 @@ export function DesktopScreen() {
         onMouseDown={() => setContextMenu(null)}
       >
         <div className="desktop-icons">
-          {desktopApps.map((app) => {
-            const Icon = app.Icon
+          {iconItems.map((item, index) => {
+            const position =
+              iconPositions[item.id] ?? getDefaultPosition(index)
+            const style = { top: position.y, left: position.x }
+            if (item.type === 'app') {
+              const Icon = item.app.Icon
+              return (
+                <DesktopIcon
+                  key={item.id}
+                  label={item.label}
+                  style={style}
+                  className={draggingId === item.id ? 'is-dragging' : ''}
+                  onMouseDown={(event) => handleIconMouseDown(event, item.id)}
+                  onClick={() =>
+                    handleIconClick(item.id, () => openWindow(item.app.id))
+                  }
+                >
+                  <span
+                    className={`icon-graphic ${item.app.iconClass ?? ''}`.trim()}
+                    aria-hidden="true"
+                  >
+                    {Icon ? <Icon /> : null}
+                  </span>
+                </DesktopIcon>
+              )
+            }
             return (
               <DesktopIcon
-                key={app.id}
-                label={app.title}
-                onClick={() => openWindow(app.id)}
+                key={item.id}
+                label={item.label}
+                style={style}
+                className={draggingId === item.id ? 'is-dragging' : ''}
+                onMouseDown={(event) => handleIconMouseDown(event, item.id)}
+                onClick={() =>
+                  handleIconClick(item.id, () => handleOpenFile(item.entry))
+                }
               >
-                <span
-                  className={`icon-graphic ${app.iconClass ?? ''}`.trim()}
-                  aria-hidden="true"
-                >
-                  {Icon ? <Icon /> : null}
+                <span className="icon-graphic file" aria-hidden="true">
+                  <svg viewBox="0 0 64 64" aria-hidden="true">
+                    <path d="M18 8h20l12 12v32a4 4 0 0 1-4 4H18a4 4 0 0 1-4-4V12a4 4 0 0 1 4-4z" />
+                    <path d="M38 8v12h12" />
+                    <rect x="22" y="30" width="20" height="4" rx="2" />
+                    <rect x="22" y="40" width="16" height="4" rx="2" />
+                  </svg>
                 </span>
               </DesktopIcon>
             )
           })}
-          {desktopFiles.map((entry) => (
-            <DesktopIcon
-              key={entry.path}
-              label={entry.name}
-              onClick={() => handleOpenFile(entry)}
-            >
-              <span className="icon-graphic file" aria-hidden="true">
-                <svg viewBox="0 0 64 64" aria-hidden="true">
-                  <path d="M18 8h20l12 12v32a4 4 0 0 1-4 4H18a4 4 0 0 1-4-4V12a4 4 0 0 1 4-4z" />
-                  <path d="M38 8v12h12" />
-                  <rect x="22" y="30" width="20" height="4" rx="2" />
-                  <rect x="22" y="40" width="16" height="4" rx="2" />
-                </svg>
-              </span>
-            </DesktopIcon>
-          ))}
         </div>
         {windows
           .filter((appWindow) => !appWindow.isMinimized)
