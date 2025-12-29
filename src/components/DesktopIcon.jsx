@@ -1,9 +1,18 @@
-export function DesktopIcon({ label, onClick, onMouseDown, style, className, children }) {
+export function DesktopIcon({
+  label,
+  onClick,
+  onDoubleClick,
+  onMouseDown,
+  style,
+  className,
+  children
+}) {
   return (
     <button
       className={`desktop-icon ${className ?? ''}`.trim()}
       type="button"
       onClick={onClick}
+      onDoubleClick={onDoubleClick}
       onMouseDown={onMouseDown}
       style={style}
     >

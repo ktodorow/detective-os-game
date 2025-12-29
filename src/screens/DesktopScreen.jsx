@@ -14,9 +14,11 @@ import '../styles/desktop.css'
 export function DesktopScreen() {
   const viewportRef = useRef(null)
   const [contextMenu, setContextMenu] = useState(null)
+  const [selectedIconId, setSelectedIconId] = useState(null)
   const [iconPositions, setIconPositions] = useState({})
   const [viewportSize, setViewportSize] = useState({ width: 0, height: 0 })
   const [draggingId, setDraggingId] = useState(null)
+  const [draggingActiveId, setDraggingActiveId] = useState(null)
   const draggingRef = useRef(null)
   const lastDragRef = useRef(null)
   const resolution = useResolution()
@@ -165,6 +167,7 @@ export function DesktopScreen() {
           Math.abs(nextY - current.startY) > 3)
       ) {
         current.moved = true
+        setDraggingActiveId(current.id)
       }
       const clamped = clampPosition({ x: nextX, y: nextY })
       setIconPositions((prev) => ({
@@ -180,6 +183,7 @@ export function DesktopScreen() {
       }
       draggingRef.current = null
       setDraggingId(null)
+      setDraggingActiveId(null)
     }
 
     window.addEventListener('mousemove', handleMouseMove)
@@ -194,6 +198,7 @@ export function DesktopScreen() {
   const handleIconMouseDown = (event, id) => {
     if (event.button !== 0) return
     event.preventDefault()
+    setSelectedIconId(id)
     const viewport = viewportRef.current
     if (!viewport) return
     const rect = viewport.getBoundingClientRect()
@@ -207,11 +212,12 @@ export function DesktopScreen() {
       moved: false
     }
     setDraggingId(id)
+    setDraggingActiveId(null)
   }
 
-  const handleIconClick = (id, action) => {
+  const handleIconDoubleClick = (id, action) => {
     const lastDrag = lastDragRef.current
-    if (lastDrag && lastDrag.id === id && Date.now() - lastDrag.time < 200) {
+    if (lastDrag && lastDrag.id === id && Date.now() - lastDrag.time < 250) {
       lastDragRef.current = null
       return
     }
@@ -294,6 +300,13 @@ export function DesktopScreen() {
     setContextMenu(null)
   }
 
+  const handleBackgroundMouseDown = (event) => {
+    if (!event.target.closest('.desktop-icon')) {
+      setSelectedIconId(null)
+    }
+    setContextMenu(null)
+  }
+
   const renderWindowContent = (appWindow) => {
     const appDefinition = getAppDefinition(appWindow.type)
     if (!appDefinition?.render) {
@@ -313,13 +326,14 @@ export function DesktopScreen() {
         className="viewport desktop-screen"
         ref={viewportRef}
         onContextMenu={handleContextMenu}
-        onMouseDown={() => setContextMenu(null)}
+        onMouseDown={handleBackgroundMouseDown}
       >
         <div className="desktop-icons">
           {iconItems.map((item, index) => {
             const position =
               iconPositions[item.id] ?? getDefaultPosition(index)
             const style = { top: position.y, left: position.x }
+            const isSelected = selectedIconId === item.id
             if (item.type === 'app') {
               const Icon = item.app.Icon
               return (
@@ -327,10 +341,13 @@ export function DesktopScreen() {
                   key={item.id}
                   label={item.label}
                   style={style}
-                  className={draggingId === item.id ? 'is-dragging' : ''}
+                  className={`${isSelected ? 'is-selected' : ''} ${
+                    draggingActiveId === item.id ? 'is-dragging' : ''
+                  }`.trim()}
                   onMouseDown={(event) => handleIconMouseDown(event, item.id)}
-                  onClick={() =>
-                    handleIconClick(item.id, () => openWindow(item.app.id))
+                  onClick={() => setSelectedIconId(item.id)}
+                  onDoubleClick={() =>
+                    handleIconDoubleClick(item.id, () => openWindow(item.app.id))
                   }
                 >
                   <span
@@ -347,10 +364,15 @@ export function DesktopScreen() {
                 key={item.id}
                 label={item.label}
                 style={style}
-                className={draggingId === item.id ? 'is-dragging' : ''}
+                className={`${isSelected ? 'is-selected' : ''} ${
+                  draggingActiveId === item.id ? 'is-dragging' : ''
+                }`.trim()}
                 onMouseDown={(event) => handleIconMouseDown(event, item.id)}
-                onClick={() =>
-                  handleIconClick(item.id, () => handleOpenFile(item.entry))
+                onClick={() => setSelectedIconId(item.id)}
+                onDoubleClick={() =>
+                  handleIconDoubleClick(item.id, () =>
+                    handleOpenFile(item.entry)
+                  )
                 }
               >
                 <span className="icon-graphic file" aria-hidden="true">
