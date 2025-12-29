@@ -1,14 +1,12 @@
-export function DesktopIcon({
-  label,
-  onClick,
-  onDoubleClick,
-  onMouseDown,
-  style,
-  className,
-  children
-}) {
+import { forwardRef } from 'react'
+
+export const DesktopIcon = forwardRef(function DesktopIcon(
+  { label, onClick, onDoubleClick, onMouseDown, style, className, children },
+  ref
+) {
   return (
     <button
+      ref={ref}
       className={`desktop-icon ${className ?? ''}`.trim()}
       type="button"
       onClick={onClick}
@@ -20,4 +18,4 @@ export function DesktopIcon({
       <span className="icon-label">{label}</span>
     </button>
   )
-}
+})

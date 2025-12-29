@@ -3,8 +3,8 @@ import { DesktopIcon } from './DesktopIcon'
 
 const TASKBAR_HEIGHT = 48
 const ICON_WIDTH = 96
-const ICON_HEIGHT = 96
-const ICON_GAP = 20
+const ICON_HEIGHT = 112
+const ICON_GAP = 24
 const ICON_PADDING_X = 32
 const ICON_PADDING_Y = 40
 
@@ -14,6 +14,7 @@ export function DesktopIconLayer({ viewportRef, items, onOpenApp, onOpenFile }) 
   const [selectedIconId, setSelectedIconId] = useState(null)
   const [draggingId, setDraggingId] = useState(null)
   const [draggingActiveId, setDraggingActiveId] = useState(null)
+  const iconRefs = useRef(new Map())
   const draggingRef = useRef(null)
   const lastDragRef = useRef(null)
   const rafRef = useRef(0)
@@ -170,24 +171,27 @@ export function DesktopIconLayer({ viewportRef, items, onOpenApp, onOpenFile }) 
       const nextY = event.clientY - rect.top - current.offsetY
       if (
         !current.moved &&
-        (Math.abs(nextX - current.startX) > 3 ||
-          Math.abs(nextY - current.startY) > 3)
+        (Math.abs(nextX - current.baseX) > 3 ||
+          Math.abs(nextY - current.baseY) > 3)
       ) {
         current.moved = true
         setDraggingActiveId(current.id)
       }
       const clamped = clampPosition({ x: nextX, y: nextY })
-      pendingPositionRef.current = { id: current.id, position: clamped }
+      current.latestPosition = clamped
+      pendingPositionRef.current = clamped
       if (!rafRef.current) {
         rafRef.current = window.requestAnimationFrame(() => {
-          const pending = pendingPositionRef.current
-          if (pending) {
-            setIconPositions((prev) => ({
-              ...prev,
-              [pending.id]: pending.position
-            }))
-          }
           rafRef.current = 0
+          const pending = pendingPositionRef.current
+          const active = draggingRef.current
+          if (!pending || !active) return
+          const node = iconRefs.current.get(active.id)
+          if (!node) return
+          const dx = pending.x - active.baseX
+          const dy = pending.y - active.baseY
+          node.style.transform = `translate3d(${dx}px, ${dy}px, 0)`
+          node.style.willChange = 'transform'
         })
       }
     }
@@ -198,15 +202,13 @@ export function DesktopIconLayer({ viewportRef, items, onOpenApp, onOpenFile }) 
         window.cancelAnimationFrame(rafRef.current)
         rafRef.current = 0
       }
-      if (pendingPositionRef.current) {
-        const pending = pendingPositionRef.current
-        pendingPositionRef.current = null
-        setIconPositions((prev) => ({
-          ...prev,
-          [pending.id]: pending.position
-        }))
-      }
+      const pending = pendingPositionRef.current
+      pendingPositionRef.current = null
       if (current && viewportSize.width && viewportSize.height) {
+        const finalPosition = pending ?? current.latestPosition ?? {
+          x: current.baseX,
+          y: current.baseY
+        }
         const cols = Math.max(
           Math.floor(
             (viewportSize.width - ICON_PADDING_X * 2 + ICON_GAP) /
@@ -231,14 +233,17 @@ export function DesktopIconLayer({ viewportRef, items, onOpenApp, onOpenFile }) 
             const cell = clampCell(positionToCell(position), cols, rows)
             occupied.add(`${cell.col}:${cell.row}`)
           })
-          const currentPos = prev[current.id] ?? {
-            x: current.startX,
-            y: current.startY
-          }
-          const targetCell = clampCell(positionToCell(currentPos), cols, rows)
+          const targetCell = clampCell(positionToCell(finalPosition), cols, rows)
           const openCell = findOpenCell(targetCell, occupied, cols, rows)
           return { ...prev, [current.id]: cellToPosition(openCell) }
         })
+      }
+      if (current) {
+        const node = iconRefs.current.get(current.id)
+        if (node) {
+          node.style.transform = ''
+          node.style.willChange = ''
+        }
       }
       if (current?.moved) {
         lastDragRef.current = { id: current.id, time: Date.now() }
@@ -269,8 +274,8 @@ export function DesktopIconLayer({ viewportRef, items, onOpenApp, onOpenFile }) 
       id,
       offsetX: event.clientX - rect.left - position.x,
       offsetY: event.clientY - rect.top - position.y,
-      startX: position.x,
-      startY: position.y,
+      baseX: position.x,
+      baseY: position.y,
       moved: false
     }
     setDraggingId(id)
@@ -304,6 +309,13 @@ export function DesktopIconLayer({ viewportRef, items, onOpenApp, onOpenFile }) 
             <DesktopIcon
               key={item.id}
               label={item.label}
+              ref={(node) => {
+                if (node) {
+                  iconRefs.current.set(item.id, node)
+                } else {
+                  iconRefs.current.delete(item.id)
+                }
+              }}
               style={style}
               className={`${isSelected ? 'is-selected' : ''} ${
                 draggingActiveId === item.id ? 'is-dragging' : ''
@@ -327,6 +339,13 @@ export function DesktopIconLayer({ viewportRef, items, onOpenApp, onOpenFile }) 
           <DesktopIcon
             key={item.id}
             label={item.label}
+            ref={(node) => {
+              if (node) {
+                iconRefs.current.set(item.id, node)
+              } else {
+                iconRefs.current.delete(item.id)
+              }
+            }}
             style={style}
             className={`${isSelected ? 'is-selected' : ''} ${
               draggingActiveId === item.id ? 'is-dragging' : ''
