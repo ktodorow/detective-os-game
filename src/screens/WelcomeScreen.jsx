@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import '../styles/welcome.css'
 
-const WELCOME_SOUND_SRC = '/audio/os-start.wav'
+const WELCOME_SOUND_SRC = '/audio/welcome.mp3'
 const WELCOME_HIDE_DELAY = 650
 const LOGIN_DELAY = 2000
 const FADE_OUT_DELAY = 700

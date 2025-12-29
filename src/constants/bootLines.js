@@ -1,4 +1,10 @@
 export const bootLines = [
+  ' _   _  ___  ___ ____ ',
+  '| \\ | |/ _ \\|_ _|  _ \\',
+  '|  \\| | | | || || |_) |',
+  '| |\\  | |_| || ||  _ <',
+  '|_| \\_|\\___/|___|_| \\_\\',
+  '                           ',
   'Detective-OS BIOS v0.1.7',
   'Copyright (C) 1994-2025 Noir Systems',
   'CPU: Obsidian™ i7-1170G “Shadow Trace” @ 3.20GHz',
