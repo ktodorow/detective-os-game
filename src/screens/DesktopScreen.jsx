@@ -1,8 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import {
-  getAppDefinition,
-  getContextMenuApps
-} from '../apps/registry'
+import { getAppDefinition, getContextMenuApps } from '../apps/registry'
+import { ContextMenuProvider, useContextMenu } from '../components/ContextMenuProvider'
 import { DesktopIconLayer } from '../components/DesktopIconLayer'
 import { Taskbar } from '../components/Taskbar'
 import { DesktopWindow } from '../components/DesktopWindow'
@@ -13,9 +11,10 @@ import { useFilesystem } from '../state/filesystemContext'
 import { useResolution } from '../state/resolutionContext'
 import '../styles/desktop.css'
 
-export function DesktopScreen() {
-  const viewportRef = useRef(null)
-  const [contextMenu, setContextMenu] = useState(null)
+const WINDOW_CLOSE_DURATION = 220
+
+function DesktopSurface({ viewportRef }) {
+  const { openContextMenu, closeMenu } = useContextMenu()
   const [closingIds, setClosingIds] = useState(() => new Set())
   const resolution = useResolution()
   const filesystem = useFilesystem()
@@ -30,8 +29,6 @@ export function DesktopScreen() {
     startResize,
     updateWindow
   } = useWindowManager(viewportRef)
-
-  const WINDOW_CLOSE_DURATION = 220
 
   const contextMenuApps = getContextMenuApps()
   const { items: iconItems, openFile } = useDesktopItems({ openWindow })
@@ -88,60 +85,34 @@ export function DesktopScreen() {
     })
   }, [windows])
 
-  useEffect(() => {
-    const handleKeyDown = (event) => {
-      if (event.key === 'Escape') {
-        setContextMenu(null)
-      }
-    }
-
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [])
-
   const handleContextMenu = (event) => {
-    event.preventDefault()
     if (!contextMenuApps.length) return
-    const viewport = viewportRef.current
-    if (!viewport) return
-    const rect = viewport.getBoundingClientRect()
-    const menuWidth = 200
-    const menuHeight = contextMenuApps.length * 38 + 16
-    const x = event.clientX - rect.left
-    const y = event.clientY - rect.top
-    const clampedX = Math.min(Math.max(x, 0), rect.width - menuWidth)
-    const clampedY = Math.min(Math.max(y, 0), rect.height - menuHeight)
-    setContextMenu({ type: 'desktop', x: clampedX, y: clampedY })
-  }
-
-  const handleMenuAction = (action) => {
-    action()
-    setContextMenu(null)
+    openContextMenu({
+      event,
+      items: contextMenuApps.map((app) => ({
+        label: `Open ${app.title}`,
+        onSelect: () => openWindow(app.id)
+      }))
+    })
   }
 
   const handleFileContextMenu = (event, entry) => {
-    event.preventDefault()
-    event.stopPropagation()
     if (!entry || entry.type !== 'file') return
-    const viewport = viewportRef.current
-    if (!viewport) return
-    const rect = viewport.getBoundingClientRect()
-    const menuWidth = 160
-    const menuHeight = 48
-    const x = event.clientX - rect.left
-    const y = event.clientY - rect.top
-    const clampedX = Math.min(Math.max(x, 0), rect.width - menuWidth)
-    const clampedY = Math.min(Math.max(y, 0), rect.height - menuHeight)
-    setContextMenu({
-      type: 'file',
-      x: clampedX,
-      y: clampedY,
-      entry
+    openContextMenu({
+      event,
+      width: 160,
+      height: 48,
+      items: [
+        {
+          label: 'Delete',
+          onSelect: () => trashFileEntry(entry, { filesystem })
+        }
+      ]
     })
   }
 
   const handleBackgroundMouseDown = () => {
-    setContextMenu(null)
+    closeMenu()
   }
 
   const requestCloseWindow = (id) => {
@@ -181,86 +152,66 @@ export function DesktopScreen() {
   }
 
   return (
+    <div
+      className="viewport desktop-screen"
+      ref={viewportRef}
+      onContextMenu={handleContextMenu}
+      onMouseDown={handleBackgroundMouseDown}
+    >
+      <DesktopIconLayer
+        viewportRef={viewportRef}
+        items={iconItems}
+        onOpenApp={openWindow}
+        onOpenFile={openFile}
+        onFileContextMenu={handleFileContextMenu}
+      />
+      {windows
+        .filter((appWindow) => !appWindow.isMinimized)
+        .map((appWindow) => {
+          const style = appWindow.isMaximized
+            ? { zIndex: appWindow.zIndex }
+            : {
+                top: appWindow.y,
+                left: appWindow.x,
+                width: appWindow.width,
+                height: appWindow.height,
+                zIndex: appWindow.zIndex
+              }
+          return (
+            <DesktopWindow
+              key={appWindow.id}
+              appWindow={appWindow}
+              style={style}
+              className={closingIds.has(appWindow.id) ? 'is-closing' : ''}
+              onFocus={() => bringToFront(appWindow.id)}
+              onDragStart={(event) => startDrag(event, appWindow)}
+              onResizeStart={(event) => startResize(event, appWindow)}
+              onMinimize={() => toggleMinimize(appWindow.id)}
+              onMaximize={() => toggleMaximize(appWindow.id)}
+              onClose={() => requestCloseWindow(appWindow.id)}
+            >
+              {renderWindowContent(appWindow)}
+            </DesktopWindow>
+          )
+        })}
+      <Taskbar
+        windows={windows}
+        onToggleMinimize={toggleMinimize}
+        onBringToFront={bringToFront}
+        panelRootRef={viewportRef}
+      />
+    </div>
+  )
+}
+
+export function DesktopScreen() {
+  const viewportRef = useRef(null)
+
+  return (
     <main className="app">
-      <div
-        className="viewport desktop-screen"
-        ref={viewportRef}
-        onContextMenu={handleContextMenu}
-        onMouseDown={handleBackgroundMouseDown}
-      >
-        <DesktopIconLayer
-          viewportRef={viewportRef}
-          items={iconItems}
-          onOpenApp={openWindow}
-          onOpenFile={openFile}
-          onFileContextMenu={handleFileContextMenu}
-        />
-        {windows
-          .filter((appWindow) => !appWindow.isMinimized)
-          .map((appWindow) => {
-            const style = appWindow.isMaximized
-              ? { zIndex: appWindow.zIndex }
-              : {
-                  top: appWindow.y,
-                  left: appWindow.x,
-                  width: appWindow.width,
-                  height: appWindow.height,
-                  zIndex: appWindow.zIndex
-                }
-            return (
-              <DesktopWindow
-                key={appWindow.id}
-                appWindow={appWindow}
-                style={style}
-                className={closingIds.has(appWindow.id) ? 'is-closing' : ''}
-                onFocus={() => bringToFront(appWindow.id)}
-                onDragStart={(event) => startDrag(event, appWindow)}
-                onResizeStart={(event) => startResize(event, appWindow)}
-                onMinimize={() => toggleMinimize(appWindow.id)}
-                onMaximize={() => toggleMaximize(appWindow.id)}
-                onClose={() => requestCloseWindow(appWindow.id)}
-              >
-                {renderWindowContent(appWindow)}
-              </DesktopWindow>
-            )
-          })}
-        {contextMenu ? (
-          <div
-            className="context-menu"
-            style={{ top: contextMenu.y, left: contextMenu.x }}
-            onMouseDown={(event) => event.stopPropagation()}
-          >
-            {contextMenu.type === 'file' ? (
-              <button
-                type="button"
-                onClick={() =>
-                  handleMenuAction(() =>
-                    trashFileEntry(contextMenu.entry, { filesystem })
-                  )
-                }
-              >
-                Delete
-              </button>
-            ) : (
-              contextMenuApps.map((app) => (
-                <button
-                  key={app.id}
-                  type="button"
-                  onClick={() => handleMenuAction(() => openWindow(app.id))}
-                >
-                  Open {app.title}
-                </button>
-              ))
-            )}
-          </div>
-        ) : null}
-        <Taskbar
-          windows={windows}
-          onToggleMinimize={toggleMinimize}
-          onBringToFront={bringToFront}
-          panelRootRef={viewportRef}
-        />
-      </div>
+      <ContextMenuProvider rootRef={viewportRef}>
+        <DesktopSurface viewportRef={viewportRef} />
+      </ContextMenuProvider>
     </main>
   )
 }

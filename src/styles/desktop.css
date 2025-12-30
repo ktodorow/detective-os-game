@@ -598,6 +598,15 @@
   background: rgba(255, 255, 255, 0.08);
 }
 
+.context-menu button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.context-menu button:disabled:hover {
+  background: transparent;
+}
+
 .settings-row {
   display: flex;
   align-items: center;
