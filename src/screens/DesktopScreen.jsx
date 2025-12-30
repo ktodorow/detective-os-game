@@ -15,6 +15,7 @@ import '../styles/desktop.css'
 export function DesktopScreen() {
   const viewportRef = useRef(null)
   const [contextMenu, setContextMenu] = useState(null)
+  const [closingIds, setClosingIds] = useState(() => new Set())
   const resolution = useResolution()
   const filesystem = useFilesystem()
   const {
@@ -28,6 +29,8 @@ export function DesktopScreen() {
     startResize,
     updateWindow
   } = useWindowManager(viewportRef)
+
+  const WINDOW_CLOSE_DURATION = 220
 
   const contextMenuApps = getContextMenuApps()
   const { items: iconItems, openFile } = useDesktopItems({ openWindow })
@@ -68,6 +71,23 @@ export function DesktopScreen() {
   }
 
   useEffect(() => {
+    setClosingIds((prev) => {
+      if (!prev.size) return prev
+      const activeIds = new Set(windows.map((appWindow) => appWindow.id))
+      let changed = false
+      const next = new Set()
+      prev.forEach((id) => {
+        if (activeIds.has(id)) {
+          next.add(id)
+          return
+        }
+        changed = true
+      })
+      return changed ? next : prev
+    })
+  }, [windows])
+
+  useEffect(() => {
     const handleKeyDown = (event) => {
       if (event.key === 'Escape') {
         setContextMenu(null)
@@ -102,6 +122,29 @@ export function DesktopScreen() {
     setContextMenu(null)
   }
 
+  const requestCloseWindow = (id) => {
+    if (!id) return
+    if (typeof window === 'undefined') {
+      closeWindow(id)
+      return
+    }
+    setClosingIds((prev) => {
+      if (prev.has(id)) return prev
+      const next = new Set(prev)
+      next.add(id)
+      return next
+    })
+    window.setTimeout(() => {
+      closeWindow(id)
+      setClosingIds((prev) => {
+        if (!prev.has(id)) return prev
+        const next = new Set(prev)
+        next.delete(id)
+        return next
+      })
+    }, WINDOW_CLOSE_DURATION)
+  }
+
   const renderWindowContent = (appWindow) => {
     const appDefinition = getAppDefinition(appWindow.type)
     if (!appDefinition?.render) {
@@ -110,7 +153,7 @@ export function DesktopScreen() {
     return appDefinition.render(appWindow, {
       resolution,
       filesystem,
-      actions: { updateWindow, closeWindow, openWindow },
+      actions: { updateWindow, closeWindow: requestCloseWindow, openWindow },
       ui
     })
   }
@@ -146,12 +189,13 @@ export function DesktopScreen() {
                 key={appWindow.id}
                 appWindow={appWindow}
                 style={style}
+                className={closingIds.has(appWindow.id) ? 'is-closing' : ''}
                 onFocus={() => bringToFront(appWindow.id)}
                 onDragStart={(event) => startDrag(event, appWindow)}
                 onResizeStart={(event) => startResize(event, appWindow)}
                 onMinimize={() => toggleMinimize(appWindow.id)}
                 onMaximize={() => toggleMaximize(appWindow.id)}
-                onClose={() => closeWindow(appWindow.id)}
+                onClose={() => requestCloseWindow(appWindow.id)}
               >
                 {renderWindowContent(appWindow)}
               </DesktopWindow>

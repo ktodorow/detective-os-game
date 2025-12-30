@@ -2,11 +2,14 @@ import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 
 const SAMPLE_DELAY = 9000
+const CLOSE_ANIMATION_DURATION = 180
 
 export function NotificationCenter({ panelRootRef }) {
   const panelRef = useRef(null)
   const buttonRef = useRef(null)
+  const closeTimerRef = useRef(null)
   const [isOpen, setIsOpen] = useState(false)
+  const [isClosing, setIsClosing] = useState(false)
   const [notifications, setNotifications] = useState(() => [
     {
       id: 'sync-01',
@@ -25,6 +28,21 @@ export function NotificationCenter({ panelRootRef }) {
   ])
 
   const unreadCount = notifications.filter((item) => !item.isRead).length
+
+  const requestClose = () => {
+    if (!isOpen || isClosing) return
+    if (typeof window === 'undefined') {
+      setIsOpen(false)
+      setIsClosing(false)
+      return
+    }
+    setIsClosing(true)
+    closeTimerRef.current = window.setTimeout(() => {
+      setIsOpen(false)
+      setIsClosing(false)
+      closeTimerRef.current = null
+    }, CLOSE_ANIMATION_DURATION)
+  }
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -51,7 +69,7 @@ export function NotificationCenter({ panelRootRef }) {
       if (panel?.contains(event.target) || button?.contains(event.target)) {
         return
       }
-      setIsOpen(false)
+      requestClose()
     }
 
     window.addEventListener('mousedown', handlePointerDown)
@@ -61,7 +79,7 @@ export function NotificationCenter({ panelRootRef }) {
   useEffect(() => {
     const handleKeyDown = (event) => {
       if (event.key === 'Escape') {
-        setIsOpen(false)
+        requestClose()
       }
     }
 
@@ -69,8 +87,19 @@ export function NotificationCenter({ panelRootRef }) {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [])
 
-  const panel = isOpen ? (
-    <section className="notification-panel" ref={panelRef}>
+  useEffect(() => {
+    return () => {
+      if (closeTimerRef.current) {
+        window.clearTimeout(closeTimerRef.current)
+      }
+    }
+  }, [])
+
+  const panel = isOpen || isClosing ? (
+    <section
+      className={`notification-panel ${isClosing ? 'is-closing' : ''}`.trim()}
+      ref={panelRef}
+    >
       <header className="notification-header">
         <div>
           Notifications
@@ -128,7 +157,20 @@ export function NotificationCenter({ panelRootRef }) {
         className="taskbar-status-icon notification-toggle"
         title="Notifications"
         ref={buttonRef}
-        onClick={() => setIsOpen((open) => !open)}
+        onClick={() => {
+          if (isOpen) {
+            requestClose()
+            return
+          }
+          if (isClosing) {
+            if (closeTimerRef.current) {
+              window.clearTimeout(closeTimerRef.current)
+              closeTimerRef.current = null
+            }
+            setIsClosing(false)
+          }
+          setIsOpen(true)
+        }}
       >
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
@@ -138,10 +180,10 @@ export function NotificationCenter({ panelRootRef }) {
           <span className="notification-badge">{unreadCount}</span>
         ) : null}
       </button>
-      {panel ?
-        panelRootRef?.current ?
-          createPortal(panel, panelRootRef.current) :
-          panel
+      {panel
+        ? panelRootRef?.current
+          ? createPortal(panel, panelRootRef.current)
+          : panel
         : null}
     </>
   )

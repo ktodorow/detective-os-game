@@ -110,6 +110,9 @@
   flex-direction: column;
   overflow: hidden;
   z-index: 3;
+  transform-origin: center;
+  animation: window-pop 0.22s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  will-change: transform, opacity;
 }
 
 .desktop-window.is-maximized {
@@ -118,6 +121,11 @@
   width: 100%;
   height: calc(100% - 48px);
   border-radius: 0;
+}
+
+.desktop-window.is-closing {
+  animation: window-close 0.2s ease forwards;
+  pointer-events: none;
 }
 
 .desktop-window.is-maximized .window-resizer {
@@ -850,6 +858,10 @@
   animation: notification-pop 0.2s ease-out;
 }
 
+.notification-panel.is-closing {
+  animation: notification-pop-out 0.18s ease-in forwards;
+}
+
 .notification-header {
   display: flex;
   align-items: center;
@@ -945,12 +957,45 @@
   }
 }
 
+@keyframes notification-pop-out {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
 @keyframes screen-fade-in {
   from {
     opacity: 0;
   }
   to {
     opacity: 1;
+  }
+}
+
+@keyframes window-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.96) translateY(6px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes window-close {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.96) translateY(8px);
   }
 }
 

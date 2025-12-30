@@ -15,6 +15,7 @@ function WindowControlButton({ label, onClick, className, children }) {
 export function DesktopWindow({
   appWindow,
   style,
+  className,
   onFocus,
   onDragStart,
   onResizeStart,
@@ -25,7 +26,9 @@ export function DesktopWindow({
 }) {
   return (
     <div
-      className={`desktop-window ${appWindow.isMaximized ? 'is-maximized' : ''}`}
+      className={`desktop-window ${appWindow.isMaximized ? 'is-maximized' : ''} ${
+        className ?? ''
+      }`.trim()}
       style={style}
       onMouseDown={onFocus}
     >
