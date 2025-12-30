@@ -1,5 +1,6 @@
 import { ConfirmDialog } from '../components/ConfirmDialog'
 import { FileDialog } from '../components/FileDialog'
+import { FileExplorer } from '../components/FileExplorer'
 import { RESOLUTION_MODES } from '../state/resolutionContext'
 
 const EmptyState = () => <div className="window-empty">No content yet.</div>
@@ -118,6 +119,14 @@ const SettingsWindow = ({ resolution, ui }) => {
 
 const renderSettings = (_window, { resolution, ui }) => (
   <SettingsWindow resolution={resolution} ui={ui} />
+)
+
+const renderComputer = (_window, { filesystem, actions }) => (
+  <FileExplorer
+    filesystem={filesystem}
+    openWindow={actions.openWindow}
+    startPath="/"
+  />
 )
 
 const getDirectoryPath = (path) => {
@@ -304,7 +313,7 @@ export const APP_LIST = [
     taskbarLabel: 'PC',
     maxInstances: 1,
     window: { width: 520, height: 360, x: 220, y: 110 },
-    render: () => <EmptyState />
+    render: renderComputer
   },
   {
     id: 'folder',

@@ -1,0 +1,207 @@
+.explorer-shell {
+  height: 100%;
+  width: 100%;
+  display: flex;
+  background: #f4f6f8;
+  color: #2b2f36;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+}
+
+.explorer-sidebar {
+  width: 190px;
+  background: #eef1f5;
+  border-right: 1px solid rgba(20, 24, 28, 0.08);
+  padding: 14px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 0;
+}
+
+.explorer-sidebar-title {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: rgba(30, 34, 40, 0.55);
+  padding: 4px 8px;
+}
+
+.explorer-sidebar-list {
+  display: grid;
+  gap: 6px;
+}
+
+.explorer-place {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: #2b2f36;
+  cursor: pointer;
+  text-align: left;
+  font-size: 0.85rem;
+}
+
+.explorer-place:hover {
+  background: rgba(28, 34, 42, 0.08);
+}
+
+.explorer-place.is-active {
+  background: rgba(76, 122, 212, 0.15);
+  color: #1f2b4a;
+}
+
+.explorer-place-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #4c7ad4;
+  box-shadow: 0 0 0 3px rgba(76, 122, 212, 0.18);
+}
+
+.explorer-main {
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+}
+
+.explorer-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(20, 24, 28, 0.08);
+  background: #f8f9fb;
+}
+
+.explorer-back {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid rgba(20, 24, 28, 0.12);
+  background: #ffffff;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.explorer-back svg {
+  width: 18px;
+  height: 18px;
+  stroke: #2b2f36;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+}
+
+.explorer-back:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.explorer-path {
+  font-family: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Consolas,
+    'Liberation Mono', monospace;
+  font-size: 0.85rem;
+  color: #4a525f;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.explorer-list-header {
+  padding: 10px 18px;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: rgba(44, 50, 58, 0.5);
+  border-bottom: 1px solid rgba(20, 24, 28, 0.08);
+}
+
+.explorer-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 18px 18px;
+  display: grid;
+  gap: 10px;
+  align-content: start;
+  min-height: 0;
+}
+
+.explorer-item {
+  display: grid;
+  grid-template-columns: 54px 1fr;
+  align-items: center;
+  gap: 14px;
+  border: 1px solid rgba(28, 34, 42, 0.08);
+  border-radius: 12px;
+  background: #ffffff;
+  padding: 10px 14px;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease, border 0.2s ease;
+  width: 100%;
+}
+
+.explorer-item:hover {
+  background: #f1f4f8;
+  border-color: rgba(76, 122, 212, 0.25);
+  transform: translateY(-1px);
+}
+
+.explorer-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  background: #eef2f6;
+  box-shadow: 0 8px 14px rgba(0, 0, 0, 0.12);
+}
+
+.explorer-icon svg {
+  width: 26px;
+  height: 26px;
+  fill: #1b1b1b;
+}
+
+.explorer-icon.folder {
+  background: linear-gradient(135deg, #ffe6a7, #f1c96e);
+}
+
+.explorer-icon.computer {
+  background: linear-gradient(135deg, #e3ecf7, #b9cbe3);
+}
+
+.explorer-icon.settings {
+  background: linear-gradient(135deg, #e6ebf7, #b7c2e6);
+}
+
+.explorer-icon.notepad {
+  background: linear-gradient(135deg, #fff0c4, #ffd67a);
+}
+
+.explorer-icon.file {
+  background: linear-gradient(135deg, #f0f3f8, #cfd8e6);
+}
+
+.explorer-name {
+  font-size: 0.95rem;
+  color: #1f242b;
+}
+
+.explorer-empty {
+  color: #6e7785;
+  font-size: 0.9rem;
+  text-align: center;
+  padding: 18px 0;
+}

@@ -335,6 +335,8 @@ export function DesktopIconLayer({ viewportRef, items, onOpenApp, onOpenFile }) 
             </DesktopIcon>
           )
         }
+        const FileIcon = item.Icon
+        const iconClass = item.iconClass ?? 'file'
         return (
           <DesktopIcon
             key={item.id}
@@ -356,13 +358,17 @@ export function DesktopIconLayer({ viewportRef, items, onOpenApp, onOpenFile }) 
               handleIconDoubleClick(item.id, () => onOpenFile(item.entry))
             }
           >
-            <span className="icon-graphic file" aria-hidden="true">
-              <svg viewBox="0 0 64 64" aria-hidden="true">
-                <path d="M18 8h20l12 12v32a4 4 0 0 1-4 4H18a4 4 0 0 1-4-4V12a4 4 0 0 1 4-4z" />
-                <path d="M38 8v12h12" />
-                <rect x="22" y="30" width="20" height="4" rx="2" />
-                <rect x="22" y="40" width="16" height="4" rx="2" />
-              </svg>
+            <span className={`icon-graphic ${iconClass}`.trim()} aria-hidden="true">
+              {FileIcon ? (
+                <FileIcon />
+              ) : (
+                <svg viewBox="0 0 64 64" aria-hidden="true">
+                  <path d="M18 8h20l12 12v32a4 4 0 0 1-4 4H18a4 4 0 0 1-4-4V12a4 4 0 0 1 4-4z" />
+                  <path d="M38 8v12h12" />
+                  <rect x="22" y="30" width="20" height="4" rx="2" />
+                  <rect x="22" y="40" width="16" height="4" rx="2" />
+                </svg>
+              )}
             </span>
           </DesktopIcon>
         )

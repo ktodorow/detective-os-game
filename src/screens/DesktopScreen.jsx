@@ -1,11 +1,12 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   getAppDefinition,
   getContextMenuApps,
-  getDesktopApps
 } from '../apps/registry'
 import { DesktopIconLayer } from '../components/DesktopIconLayer'
+import { Taskbar } from '../components/Taskbar'
 import { DesktopWindow } from '../components/DesktopWindow'
+import { useDesktopItems } from '../hooks/useDesktopItems'
 import { useWindowManager } from '../hooks/useWindowManager'
 import { useFilesystem } from '../state/filesystemContext'
 import { useResolution } from '../state/resolutionContext'
@@ -28,41 +29,8 @@ export function DesktopScreen() {
     updateWindow
   } = useWindowManager(viewportRef)
 
-  const desktopApps = getDesktopApps()
   const contextMenuApps = getContextMenuApps()
-  const desktopFiles = filesystem
-    .listDir('/home/Desktop')
-    .filter(
-      (entry) =>
-        entry.type === 'file' && entry.name.toLowerCase().endsWith('.txt')
-    )
-    .sort((a, b) => a.name.localeCompare(b.name))
-
-  const iconItems = useMemo(() => {
-    const appItems = desktopApps.map((app) => ({
-      id: `app:${app.id}`,
-      type: 'app',
-      app,
-      label: app.title
-    }))
-    const fileItems = desktopFiles.map((entry) => ({
-      id: `file:${entry.path}`,
-      type: 'file',
-      entry,
-      label: entry.name
-    }))
-    return [...appItems, ...fileItems]
-  }, [desktopApps, desktopFiles])
-
-  const handleOpenFile = (entry) => {
-    const fileContent = filesystem.readFile(entry.path)
-    if (fileContent === null) return
-    openWindow('notepad', {
-      content: fileContent,
-      filename: entry.name,
-      path: entry.path
-    })
-  }
+  const { items: iconItems, openFile } = useDesktopItems({ openWindow })
 
   const startFactoryReset = () => {
     if (typeof window === 'undefined') return
@@ -142,7 +110,7 @@ export function DesktopScreen() {
     return appDefinition.render(appWindow, {
       resolution,
       filesystem,
-      actions: { updateWindow, closeWindow },
+      actions: { updateWindow, closeWindow, openWindow },
       ui
     })
   }
@@ -159,7 +127,7 @@ export function DesktopScreen() {
           viewportRef={viewportRef}
           items={iconItems}
           onOpenApp={openWindow}
-          onOpenFile={handleOpenFile}
+          onOpenFile={openFile}
         />
         {windows
           .filter((appWindow) => !appWindow.isMinimized)
@@ -206,35 +174,12 @@ export function DesktopScreen() {
             ))}
           </div>
         ) : null}
-        <div className="taskbar">
-          <button className="start-button" type="button" aria-label="Start">
-            <img src="/detective-face.svg" alt="" aria-hidden="true" />
-          </button>
-          <div className="taskbar-windows">
-            {windows.map((appWindow) => (
-              <button
-                key={appWindow.id}
-                className={`taskbar-window ${
-                  appWindow.isMinimized ? 'is-minimized' : 'is-active'
-                }`}
-                type="button"
-                onClick={() => {
-                  toggleMinimize(appWindow.id)
-                  bringToFront(appWindow.id)
-                }}
-              >
-                <span className="taskbar-window-icon">
-                  {getAppDefinition(appWindow.type)?.taskbarLabel ?? 'APP'}
-                </span>
-                <span className="taskbar-window-label">{appWindow.title}</span>
-              </button>
-            ))}
-          </div>
-          <div className="taskbar-icons" aria-hidden="true">
-            <div className="taskbar-icon app-green">NB</div>
-            <div className="taskbar-icon app-slate">DM</div>
-          </div>
-        </div>
+        <Taskbar
+          windows={windows}
+          onToggleMinimize={toggleMinimize}
+          onBringToFront={bringToFront}
+          panelRootRef={viewportRef}
+        />
       </div>
     </main>
   )
