@@ -7,8 +7,9 @@ const createDefaultFilesystem = () => ({
   version: 1,
   nodes: {
     '/': { type: 'dir', name: '', children: ['home', 'mnt'] },
-    '/home': { type: 'dir', name: 'home', children: ['Desktop'] },
+    '/home': { type: 'dir', name: 'home', children: ['Desktop', 'Trash'] },
     '/home/Desktop': { type: 'dir', name: 'Desktop', children: [] },
+    '/home/Trash': { type: 'dir', name: 'Trash', children: [] },
     '/mnt': { type: 'dir', name: 'mnt', children: [] }
   }
 })
@@ -82,6 +83,74 @@ const filesystemReducer = (state, action) => {
         }
       }
     }
+    case 'DELETE_NODE': {
+      const path = normalizePath(action.path)
+      const node = state.nodes[path]
+      if (!node || node.type !== 'file') return state
+      const parentPath = getParentPath(path)
+      if (!parentPath) return state
+      const parent = state.nodes[parentPath]
+      if (!parent || parent.type !== 'dir') return state
+      const name = getBasename(path)
+      const nextNodes = { ...state.nodes }
+      delete nextNodes[path]
+      nextNodes[parentPath] = {
+        ...parent,
+        children: parent.children.filter((child) => child !== name)
+      }
+      return {
+        ...state,
+        nodes: nextNodes
+      }
+    }
+    case 'MOVE_NODE': {
+      const from = normalizePath(action.from)
+      const to = normalizePath(action.to)
+      const updates = action.updates ?? null
+      if (from === to) return state
+      const node = state.nodes[from]
+      if (!node || node.type !== 'file') return state
+      if (state.nodes[to]) return state
+      const fromParentPath = getParentPath(from)
+      const toParentPath = getParentPath(to)
+      if (!fromParentPath || !toParentPath) return state
+      const fromParent = state.nodes[fromParentPath]
+      const toParent = state.nodes[toParentPath]
+      if (!fromParent || fromParent.type !== 'dir') return state
+      if (!toParent || toParent.type !== 'dir') return state
+      const fromName = getBasename(from)
+      const toName = getBasename(to)
+      const nextFromChildren = fromParent.children.filter(
+        (child) => child !== fromName
+      )
+      const nextToChildren = toParent.children.includes(toName)
+        ? toParent.children
+        : [...toParent.children, toName]
+      const nextNodes = { ...state.nodes }
+      delete nextNodes[from]
+      const nextNode = updates
+        ? { ...node, name: toName, ...updates }
+        : { ...node, name: toName }
+      if (updates?.originPath === null) {
+        delete nextNode.originPath
+      }
+      if (updates?.trashedAt === null) {
+        delete nextNode.trashedAt
+      }
+      nextNodes[to] = nextNode
+      nextNodes[fromParentPath] = {
+        ...fromParent,
+        children: nextFromChildren
+      }
+      nextNodes[toParentPath] = {
+        ...toParent,
+        children: nextToChildren
+      }
+      return {
+        ...state,
+        nodes: nextNodes
+      }
+    }
     default:
       return state
   }
@@ -114,6 +183,12 @@ export function FilesystemProvider({ children }) {
   useEffect(() => {
     if (typeof window === 'undefined') return
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
+  }, [state])
+
+  useEffect(() => {
+    if (!state?.nodes?.['/home/Trash']) {
+      dispatch({ type: 'CREATE_DIR', path: '/home/Trash' })
+    }
   }, [state])
 
   const value = useMemo(() => {
@@ -150,6 +225,9 @@ export function FilesystemProvider({ children }) {
     const writeFile = (path, content) =>
       dispatch({ type: 'WRITE_FILE', path, content })
     const createDir = (path) => dispatch({ type: 'CREATE_DIR', path })
+    const deleteFile = (path) => dispatch({ type: 'DELETE_NODE', path })
+    const moveFile = (from, to, updates) =>
+      dispatch({ type: 'MOVE_NODE', from, to, updates })
 
     return {
       getNode,
@@ -160,7 +238,9 @@ export function FilesystemProvider({ children }) {
       joinPath,
       readFile,
       writeFile,
-      createDir
+      createDir,
+      deleteFile,
+      moveFile
     }
   }, [state])
 

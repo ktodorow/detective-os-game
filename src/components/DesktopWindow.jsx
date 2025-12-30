@@ -31,6 +31,10 @@ export function DesktopWindow({
       }`.trim()}
       style={style}
       onMouseDown={onFocus}
+      onContextMenu={(event) => {
+        event.preventDefault()
+        event.stopPropagation()
+      }}
     >
       <div className="window-titlebar" onMouseDown={onDragStart}>
         <div className="window-title">{appWindow.title}</div>

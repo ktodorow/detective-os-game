@@ -96,6 +96,27 @@
   background: linear-gradient(135deg, #f2f4f7, #c9d1db);
 }
 
+.icon-graphic.trash {
+  background: linear-gradient(135deg, #f3f3f3, #c9d0db);
+}
+
+.icon-graphic.trash-full {
+  background: linear-gradient(135deg, #f2f2f2, #c1cad6);
+  position: relative;
+}
+
+.icon-graphic.trash-full::after {
+  content: '';
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #ffb347;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.75);
+}
+
 .icon-label {
   font-size: 0.95rem;
 }

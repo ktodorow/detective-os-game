@@ -1,7 +1,16 @@
 import { forwardRef } from 'react'
 
 export const DesktopIcon = forwardRef(function DesktopIcon(
-  { label, onClick, onDoubleClick, onMouseDown, style, className, children },
+  {
+    label,
+    onClick,
+    onDoubleClick,
+    onMouseDown,
+    onContextMenu,
+    style,
+    className,
+    children
+  },
   ref
 ) {
   return (
@@ -12,6 +21,7 @@ export const DesktopIcon = forwardRef(function DesktopIcon(
       onClick={onClick}
       onDoubleClick={onDoubleClick}
       onMouseDown={onMouseDown}
+      onContextMenu={onContextMenu}
       style={style}
     >
       {children}

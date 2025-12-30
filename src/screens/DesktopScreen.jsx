@@ -1,13 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
 import {
   getAppDefinition,
-  getContextMenuApps,
+  getContextMenuApps
 } from '../apps/registry'
 import { DesktopIconLayer } from '../components/DesktopIconLayer'
 import { Taskbar } from '../components/Taskbar'
 import { DesktopWindow } from '../components/DesktopWindow'
 import { useDesktopItems } from '../hooks/useDesktopItems'
 import { useWindowManager } from '../hooks/useWindowManager'
+import { trashFileEntry } from '../state/fileActions'
 import { useFilesystem } from '../state/filesystemContext'
 import { useResolution } from '../state/resolutionContext'
 import '../styles/desktop.css'
@@ -110,12 +111,33 @@ export function DesktopScreen() {
     const y = event.clientY - rect.top
     const clampedX = Math.min(Math.max(x, 0), rect.width - menuWidth)
     const clampedY = Math.min(Math.max(y, 0), rect.height - menuHeight)
-    setContextMenu({ x: clampedX, y: clampedY })
+    setContextMenu({ type: 'desktop', x: clampedX, y: clampedY })
   }
 
   const handleMenuAction = (action) => {
     action()
     setContextMenu(null)
+  }
+
+  const handleFileContextMenu = (event, entry) => {
+    event.preventDefault()
+    event.stopPropagation()
+    if (!entry || entry.type !== 'file') return
+    const viewport = viewportRef.current
+    if (!viewport) return
+    const rect = viewport.getBoundingClientRect()
+    const menuWidth = 160
+    const menuHeight = 48
+    const x = event.clientX - rect.left
+    const y = event.clientY - rect.top
+    const clampedX = Math.min(Math.max(x, 0), rect.width - menuWidth)
+    const clampedY = Math.min(Math.max(y, 0), rect.height - menuHeight)
+    setContextMenu({
+      type: 'file',
+      x: clampedX,
+      y: clampedY,
+      entry
+    })
   }
 
   const handleBackgroundMouseDown = () => {
@@ -171,6 +193,7 @@ export function DesktopScreen() {
           items={iconItems}
           onOpenApp={openWindow}
           onOpenFile={openFile}
+          onFileContextMenu={handleFileContextMenu}
         />
         {windows
           .filter((appWindow) => !appWindow.isMinimized)
@@ -207,15 +230,28 @@ export function DesktopScreen() {
             style={{ top: contextMenu.y, left: contextMenu.x }}
             onMouseDown={(event) => event.stopPropagation()}
           >
-            {contextMenuApps.map((app) => (
+            {contextMenu.type === 'file' ? (
               <button
-                key={app.id}
                 type="button"
-                onClick={() => handleMenuAction(() => openWindow(app.id))}
+                onClick={() =>
+                  handleMenuAction(() =>
+                    trashFileEntry(contextMenu.entry, { filesystem })
+                  )
+                }
               >
-                Open {app.title}
+                Delete
               </button>
-            ))}
+            ) : (
+              contextMenuApps.map((app) => (
+                <button
+                  key={app.id}
+                  type="button"
+                  onClick={() => handleMenuAction(() => openWindow(app.id))}
+                >
+                  Open {app.title}
+                </button>
+              ))
+            )}
           </div>
         ) : null}
         <Taskbar

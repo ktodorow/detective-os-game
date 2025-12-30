@@ -13,14 +13,27 @@ export function useDesktopItems({ openWindow }) {
   const desktopFiles = filesystem
     .listDir('/home/Desktop')
     .filter((entry) => entry.type === 'file')
+  const trashFiles = filesystem
+    .listDir('/home/Trash')
+    .filter((entry) => entry.type === 'file')
+  const hasTrashFiles = trashFiles.length > 0
 
   const items = useMemo(() => {
-    const appItems = desktopApps.map((app) => ({
-      id: `app:${app.id}`,
-      type: 'app',
-      app,
-      label: app.title
-    }))
+    const appItems = desktopApps.map((app) => {
+      const iconClass =
+        app.id === 'trash'
+          ? hasTrashFiles
+            ? 'trash-full'
+            : app.iconClass
+          : app.iconClass
+      return {
+        id: `app:${app.id}`,
+        type: 'app',
+        app,
+        label: app.title,
+        iconClass
+      }
+    })
 
     const fileItems = desktopFiles.map((entry) => {
       const association = getFileAssociation(entry.name)
@@ -38,7 +51,7 @@ export function useDesktopItems({ openWindow }) {
     })
 
     return sortItems([...appItems, ...fileItems])
-  }, [desktopApps, desktopFiles])
+  }, [desktopApps, desktopFiles, hasTrashFiles])
 
   const openFile = (entry) =>
     openFileEntry(entry, {

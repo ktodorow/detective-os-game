@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { getAppDefinition } from '../apps/registry'
-import { openFileEntry } from '../state/fileActions'
+import { openFileEntry, restoreFileEntry, trashFileEntry } from '../state/fileActions'
 import { getFileAssociation } from '../state/fileAssociations'
 import '../styles/file-explorer.css'
 
@@ -11,11 +11,13 @@ const FolderIcon = () => (
   </svg>
 )
 
-export function FileExplorer({ filesystem, openWindow, startPath = '/' }) {
+export function FileExplorer({ filesystem, openWindow, ui, startPath = '/' }) {
+  const shellRef = useRef(null)
   const [navState, setNavState] = useState(() => ({
     stack: [startPath],
     index: 0
   }))
+  const [contextMenu, setContextMenu] = useState(null)
 
   const currentPath = navState.stack[navState.index] ?? '/'
   const canGoBack = navState.index > 0
@@ -53,14 +55,86 @@ export function FileExplorer({ filesystem, openWindow, startPath = '/' }) {
     openFileEntry(entry, { filesystem, openWindow })
   }
 
+  const handleShellContextMenu = (event) => {
+    event.preventDefault()
+    event.stopPropagation()
+    const shell = shellRef.current
+    if (!shell) return
+    const isInMain = event.target.closest('.explorer-list')
+    const isOnItem = event.target.closest('.explorer-item')
+    if (!isInMain || isOnItem || currentPath !== '/home/Trash') {
+      setContextMenu(null)
+      return
+    }
+    const rect = shell.getBoundingClientRect()
+    const menuWidth = 180
+    const menuHeight = 44
+    const x = event.clientX - rect.left
+    const y = event.clientY - rect.top
+    const clampedX = Math.min(Math.max(x, 0), rect.width - menuWidth)
+    const clampedY = Math.min(Math.max(y, 0), rect.height - menuHeight)
+    setContextMenu({
+      type: 'trash-root',
+      x: clampedX,
+      y: clampedY
+    })
+  }
+
+  const handleFileContextMenu = (event, entry) => {
+    event.preventDefault()
+    event.stopPropagation()
+    if (!entry || entry.type !== 'file') {
+      setContextMenu(null)
+      return
+    }
+    const shell = shellRef.current
+    if (!shell) return
+    const rect = shell.getBoundingClientRect()
+    const menuWidth = 160
+    const menuHeight = 44
+    const x = event.clientX - rect.left
+    const y = event.clientY - rect.top
+    const clampedX = Math.min(Math.max(x, 0), rect.width - menuWidth)
+    const clampedY = Math.min(Math.max(y, 0), rect.height - menuHeight)
+    setContextMenu({
+      type: 'file',
+      x: clampedX,
+      y: clampedY,
+      entry
+    })
+  }
+
+  useEffect(() => {
+    if (!contextMenu) return
+    const handlePointerDown = (event) => {
+      const shell = shellRef.current
+      if (shell && shell.contains(event.target)) {
+        const menu = shell.querySelector('.explorer-context-menu')
+        if (menu && menu.contains(event.target)) return
+      }
+      setContextMenu(null)
+    }
+    window.addEventListener('mousedown', handlePointerDown)
+    return () => window.removeEventListener('mousedown', handlePointerDown)
+  }, [contextMenu])
+
   const places = [
     { id: 'home', label: 'Home', path: '/home' },
     { id: 'desktop', label: 'Desktop', path: '/home/Desktop' },
+    { id: 'trash', label: 'Trash', path: '/home/Trash' },
     { id: 'mnt', label: 'Mounts', path: '/mnt' }
   ]
+  const trashFiles =
+    currentPath === '/home/Trash'
+      ? entries.filter((entry) => entry.type === 'file')
+      : []
 
   return (
-    <div className="explorer-shell">
+    <div
+      className="explorer-shell"
+      ref={shellRef}
+      onContextMenu={handleShellContextMenu}
+    >
       <aside className="explorer-sidebar">
         <div className="explorer-sidebar-title">Places</div>
         <div className="explorer-sidebar-list">
@@ -130,6 +204,7 @@ export function FileExplorer({ filesystem, openWindow, startPath = '/' }) {
                   type="button"
                   className="explorer-item"
                   onClick={() => handleOpen(entry)}
+                  onContextMenu={(event) => handleFileContextMenu(event, entry)}
                 >
                   <span
                     className={`explorer-icon ${iconClass}`.trim()}
@@ -153,6 +228,79 @@ export function FileExplorer({ filesystem, openWindow, startPath = '/' }) {
           )}
         </div>
       </section>
+      {contextMenu ? (
+        <div
+          className="explorer-context-menu"
+          style={{ top: contextMenu.y, left: contextMenu.x }}
+          onMouseDown={(event) => event.stopPropagation()}
+        >
+          {contextMenu.type === 'trash-root' ? (
+            <button
+              type="button"
+              disabled={trashFiles.length === 0}
+              onClick={() => {
+                setContextMenu(null)
+                if (!trashFiles.length) return
+                ui?.openConfirm?.({
+                  title: 'Empty Trash',
+                  message:
+                    'This will permanently delete all files in Trash. This action cannot be undone.',
+                  confirmLabel: 'Delete all',
+                  cancelLabel: 'Cancel',
+                  tone: 'danger',
+                  onConfirm: () => {
+                    trashFiles.forEach((file) =>
+                      filesystem.deleteFile(file.path)
+                    )
+                  }
+                })
+              }}
+            >
+              Empty Trash
+            </button>
+          ) : contextMenu.entry?.path?.startsWith('/home/Trash') ? (
+            <>
+              <button
+                type="button"
+                onClick={() => {
+                  restoreFileEntry(contextMenu.entry, { filesystem })
+                  setContextMenu(null)
+                }}
+              >
+                Restore
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const entry = contextMenu.entry
+                  setContextMenu(null)
+                  ui?.openConfirm?.({
+                    title: 'Delete Permanently',
+                    message:
+                      'This will permanently delete the file. This action cannot be undone.',
+                    confirmLabel: 'Delete permanently',
+                    cancelLabel: 'Cancel',
+                    tone: 'danger',
+                    onConfirm: () => trashFileEntry(entry, { filesystem })
+                  })
+                }}
+              >
+                Delete Permanently
+              </button>
+            </>
+          ) : (
+            <button
+              type="button"
+              onClick={() => {
+                trashFileEntry(contextMenu.entry, { filesystem })
+                setContextMenu(null)
+              }}
+            >
+              Delete
+            </button>
+          )}
+        </div>
+      ) : null}
     </div>
   )
 }

@@ -8,13 +8,20 @@ const ICON_GAP = 24
 const ICON_PADDING_X = 32
 const ICON_PADDING_Y = 40
 
-export function DesktopIconLayer({ viewportRef, items, onOpenApp, onOpenFile }) {
+export function DesktopIconLayer({
+  viewportRef,
+  items,
+  onOpenApp,
+  onOpenFile,
+  onFileContextMenu
+}) {
   const [iconPositions, setIconPositions] = useState({})
   const [viewportSize, setViewportSize] = useState({ width: 0, height: 0 })
   const [selectedIconId, setSelectedIconId] = useState(null)
   const [draggingId, setDraggingId] = useState(null)
   const [draggingActiveId, setDraggingActiveId] = useState(null)
   const iconRefs = useRef(new Map())
+  const userMovedRef = useRef(new Set())
   const draggingRef = useRef(null)
   const lastDragRef = useRef(null)
   const rafRef = useRef(0)
@@ -125,9 +132,38 @@ export function DesktopIconLayer({ viewportRef, items, onOpenApp, onOpenFile }) 
       let changed = false
       const idSet = new Set(iconItems.map((item) => item.id))
       const occupied = new Set()
+      const trashId = 'app:trash'
+      const hasTrash = idSet.has(trashId)
+      const shouldAnchorTrash =
+        hasTrash && !userMovedRef.current.has(trashId)
+      const trashCell = shouldAnchorTrash
+        ? clampCell({ col: cols - 1, row: rows - 1 }, cols, rows)
+        : null
+
+      if (userMovedRef.current.size) {
+        userMovedRef.current.forEach((id) => {
+          if (!idSet.has(id)) {
+            userMovedRef.current.delete(id)
+          }
+        })
+      }
+
+      if (shouldAnchorTrash && trashCell) {
+        const snapped = cellToPosition(trashCell)
+        if (
+          !next[trashId] ||
+          next[trashId].x !== snapped.x ||
+          next[trashId].y !== snapped.y
+        ) {
+          next[trashId] = snapped
+          changed = true
+        }
+        occupied.add(`${trashCell.col}:${trashCell.row}`)
+      }
 
       Object.entries(next).forEach(([key, position]) => {
         if (!idSet.has(key)) return
+        if (shouldAnchorTrash && key === trashId) return
         const cell = clampCell(positionToCell(position), cols, rows)
         const snapped = cellToPosition(cell)
         occupied.add(`${cell.col}:${cell.row}`)
@@ -140,8 +176,11 @@ export function DesktopIconLayer({ viewportRef, items, onOpenApp, onOpenFile }) 
       iconItems.forEach((item, index) => {
         if (!next[item.id]) {
           const basePos = clampPosition(getDefaultPosition(index))
-          const targetCell = clampCell(positionToCell(basePos), cols, rows)
-          const openCell = findOpenCell(targetCell, occupied, cols, rows)
+          const preferredCell =
+            item.id === trashId && shouldAnchorTrash && trashCell
+              ? trashCell
+              : clampCell(positionToCell(basePos), cols, rows)
+          const openCell = findOpenCell(preferredCell, occupied, cols, rows)
           next[item.id] = cellToPosition(openCell)
           occupied.add(`${openCell.col}:${openCell.row}`)
           changed = true
@@ -246,6 +285,7 @@ export function DesktopIconLayer({ viewportRef, items, onOpenApp, onOpenFile }) 
         }
       }
       if (current?.moved) {
+        userMovedRef.current.add(current.id)
         lastDragRef.current = { id: current.id, time: Date.now() }
       }
       draggingRef.current = null
@@ -305,6 +345,7 @@ export function DesktopIconLayer({ viewportRef, items, onOpenApp, onOpenFile }) 
         const isSelected = selectedIconId === item.id
         if (item.type === 'app') {
           const Icon = item.app.Icon
+          const iconClass = item.iconClass ?? item.app.iconClass
           return (
             <DesktopIcon
               key={item.id}
@@ -327,7 +368,7 @@ export function DesktopIconLayer({ viewportRef, items, onOpenApp, onOpenFile }) 
               }
             >
               <span
-                className={`icon-graphic ${item.app.iconClass ?? ''}`.trim()}
+                className={`icon-graphic ${iconClass ?? ''}`.trim()}
                 aria-hidden="true"
               >
                 {Icon ? <Icon /> : null}
@@ -356,6 +397,9 @@ export function DesktopIconLayer({ viewportRef, items, onOpenApp, onOpenFile }) 
             onClick={() => setSelectedIconId(item.id)}
             onDoubleClick={() =>
               handleIconDoubleClick(item.id, () => onOpenFile(item.entry))
+            }
+            onContextMenu={(event) =>
+              onFileContextMenu?.(event, item.entry)
             }
           >
             <span className={`icon-graphic ${iconClass}`.trim()} aria-hidden="true">

@@ -21,6 +21,16 @@ const FolderIcon = () => (
   </svg>
 )
 
+const TrashIcon = () => (
+  <svg viewBox="0 0 64 64" aria-hidden="true">
+    <path d="M18 18h28l-2 36a4 4 0 0 1-4 4H24a4 4 0 0 1-4-4z" />
+    <path d="M14 18h36" />
+    <path d="M24 18l2-6h12l2 6" />
+    <path d="M28 26v22" />
+    <path d="M36 26v22" />
+  </svg>
+)
+
 const SettingsIcon = () => (
   <svg viewBox="0 0 64 64" aria-hidden="true">
     <circle cx="32" cy="32" r="10" />
@@ -121,11 +131,21 @@ const renderSettings = (_window, { resolution, ui }) => (
   <SettingsWindow resolution={resolution} ui={ui} />
 )
 
-const renderComputer = (_window, { filesystem, actions }) => (
+const renderComputer = (_window, { filesystem, actions, ui }) => (
   <FileExplorer
     filesystem={filesystem}
     openWindow={actions.openWindow}
+    ui={ui}
     startPath="/"
+  />
+)
+
+const renderTrash = (_window, { filesystem, actions, ui }) => (
+  <FileExplorer
+    filesystem={filesystem}
+    openWindow={actions.openWindow}
+    ui={ui}
+    startPath="/home/Trash"
   />
 )
 
@@ -326,6 +346,18 @@ export const APP_LIST = [
     maxInstances: 1,
     window: { width: 520, height: 360, x: 260, y: 140 },
     render: () => <EmptyState />
+  },
+  {
+    id: 'trash',
+    title: 'Trash',
+    iconClass: 'trash',
+    Icon: TrashIcon,
+    showOnDesktop: true,
+    showInContextMenu: false,
+    taskbarLabel: 'TR',
+    maxInstances: 1,
+    window: { width: 520, height: 360, x: 300, y: 160 },
+    render: renderTrash
   },
   {
     id: 'notepad',
