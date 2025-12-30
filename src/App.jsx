@@ -3,12 +3,14 @@ import './styles/base.css'
 import { BlackoutScreen } from './screens/BlackoutScreen'
 import { BootScreen } from './screens/BootScreen'
 import { DesktopScreen } from './screens/DesktopScreen'
+import { LoadingScreen } from './screens/LoadingScreen'
 import { WelcomeScreen } from './screens/WelcomeScreen'
 import { FLOW_EVENTS, FLOW_STATES, flowReducer } from './state/flowMachine'
 import { FilesystemProvider } from './state/filesystemContext'
 import { ResolutionProvider } from './state/resolutionContext'
 
-const BLACKOUT_DELAY = 2000
+const POST_BOOT_DELAY = 2000
+const BLACKOUT_DURATION = 700
 const hasWindow = typeof window !== 'undefined'
 const devSkipBoot =
   import.meta.env.DEV &&
@@ -24,11 +26,11 @@ function App() {
 
   useEffect(() => {
     if (screen !== FLOW_STATES.POST_BOOT) return
-    const blackoutTimer = setTimeout(() => {
+    const postBootTimer = setTimeout(() => {
       dispatch({ type: FLOW_EVENTS.SHOW_BLACKOUT })
-    }, BLACKOUT_DELAY)
+    }, POST_BOOT_DELAY)
 
-    return () => clearTimeout(blackoutTimer)
+    return () => clearTimeout(postBootTimer)
   }, [screen])
 
   const handleBootComplete = () => {
@@ -40,7 +42,16 @@ function App() {
   if (screen === FLOW_STATES.BLACKOUT) {
     content = (
       <BlackoutScreen
-        onComplete={() => dispatch({ type: FLOW_EVENTS.SHOW_WELCOME })}
+        duration={BLACKOUT_DURATION}
+        onComplete={() => dispatch({ type: FLOW_EVENTS.SHOW_LOADING })}
+      />
+    )
+  }
+
+  if (screen === FLOW_STATES.LOADING) {
+    content = (
+      <LoadingScreen
+        onComplete={() => dispatch({ type: FLOW_EVENTS.LOADING_COMPLETE })}
       />
     )
   }

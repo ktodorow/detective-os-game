@@ -8,6 +8,7 @@
   position: relative;
   overflow: hidden;
   font-family: 'Space Grotesk', 'Segoe UI', sans-serif;
+  animation: welcome-fade-in 0.8s ease both;
 }
 
 .welcome-screen.is-fading-out {
@@ -234,6 +235,15 @@
 @keyframes screen-fade-out {
   to {
     opacity: 0;
+  }
+}
+
+@keyframes welcome-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
   }
 }
 
