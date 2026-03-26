@@ -834,13 +834,16 @@
   position: relative;
 }
 
-.taskbar-status-icon.notification-toggle {
+.taskbar-status-icon.notification-toggle,
+.taskbar-status-icon.wifi-toggle {
   border: none;
   padding: 0;
   color: inherit;
+  cursor: pointer;
 }
 
-.taskbar-status-icon.notification-toggle:hover {
+.taskbar-status-icon.notification-toggle:hover,
+.taskbar-status-icon.wifi-toggle:hover {
   background: rgba(255, 255, 255, 0.15);
 }
 
@@ -890,6 +893,211 @@
 
 .notification-panel.is-closing {
   animation: notification-pop-out 0.18s ease-in forwards;
+}
+
+.wifi-panel {
+  position: absolute;
+  right: 92px;
+  bottom: 62px;
+  width: min(320px, 90vw);
+  max-height: 340px;
+  background: rgba(28, 30, 34, 0.96);
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+  display: grid;
+  grid-template-rows: auto auto auto 1fr;
+  overflow: hidden;
+  z-index: 4;
+  animation: notification-pop 0.2s ease-out;
+}
+
+.wifi-panel.is-closing {
+  animation: notification-pop-out 0.18s ease-in forwards;
+}
+
+.wifi-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  font-size: 0.9rem;
+  color: #f3f3f3;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.wifi-power {
+  border: none;
+  background: rgba(255, 255, 255, 0.08);
+  color: #f3f3f3;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.wifi-power:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.wifi-power.is-off {
+  opacity: 0.7;
+}
+
+.wifi-summary {
+  padding: 10px 14px;
+  font-size: 0.78rem;
+  color: #d9d9d9;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.wifi-auth-card {
+  display: grid;
+  gap: 8px;
+  margin: 10px 12px 0;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(109, 200, 255, 0.35);
+  background: rgba(109, 200, 255, 0.12);
+}
+
+.wifi-auth-title {
+  font-size: 0.8rem;
+  color: #f7f9fc;
+  font-weight: 600;
+}
+
+.wifi-auth-card input {
+  width: 100%;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(15, 19, 24, 0.78);
+  color: #f4f7fb;
+  padding: 8px 10px;
+  font-size: 0.8rem;
+}
+
+.wifi-auth-card input::placeholder {
+  color: rgba(220, 228, 239, 0.6);
+}
+
+.wifi-auth-error {
+  font-size: 0.72rem;
+  color: #ffb8b8;
+}
+
+.wifi-auth-hint {
+  font-size: 0.7rem;
+  color: #d7e8f7;
+}
+
+.wifi-auth-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.wifi-auth-actions button {
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 8px;
+  background: rgba(15, 19, 24, 0.65);
+  color: #eff4fc;
+  padding: 5px 10px;
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+
+.wifi-auth-actions button.is-primary {
+  border-color: rgba(109, 200, 255, 0.35);
+  background: linear-gradient(135deg, #6bbcf0, #4b9bd1);
+  color: #fff;
+}
+
+.wifi-list {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  overflow-y: auto;
+}
+
+.wifi-network {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.08);
+  color: #f6f6f6;
+  padding: 10px 12px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  cursor: pointer;
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.wifi-network:hover {
+  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.wifi-network:disabled {
+  opacity: 0.5;
+  cursor: default;
+  transform: none;
+}
+
+.wifi-network.is-connected {
+  border-color: rgba(109, 200, 255, 0.5);
+  background: rgba(109, 200, 255, 0.2);
+}
+
+.wifi-network-main {
+  display: grid;
+  gap: 3px;
+  text-align: left;
+}
+
+.wifi-network-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.wifi-network-meta {
+  font-size: 0.72rem;
+  color: #ced4de;
+}
+
+.wifi-network-side {
+  display: grid;
+  justify-items: end;
+  gap: 4px;
+}
+
+.wifi-signal {
+  width: 28px;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.wifi-signal.is-excellent {
+  background: linear-gradient(90deg, #80f2b4, #54d98c);
+}
+
+.wifi-signal.is-good {
+  background: linear-gradient(90deg, #8ed9ff, #5fb8f0);
+}
+
+.wifi-signal.is-fair {
+  background: linear-gradient(90deg, #ffd887, #f4be55);
+}
+
+.wifi-signal.is-weak {
+  background: linear-gradient(90deg, #ff8f8f, #ef6f6f);
+}
+
+.wifi-action {
+  font-size: 0.68rem;
+  color: #d6dce7;
 }
 
 .notification-header {
