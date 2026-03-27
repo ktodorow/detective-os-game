@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { saveWifiStatus } from '../state/wifiStatus'
 
 const CLOSE_ANIMATION_DURATION = 180
 const WIFI_PASSWORDS_STORAGE_KEY = 'detective-os.wifi.passwords.v1'
@@ -146,16 +145,6 @@ export function WifiCenter({ panelRootRef }) {
     authTargetId && wifiEnabled
       ? NETWORKS.find((network) => network.id === authTargetId) ?? null
       : null
-
-  useEffect(() => {
-    saveWifiStatus({
-      enabled: wifiEnabled,
-      connectedId: connectedNetwork?.id ?? null,
-      connectedName: connectedNetwork?.name ?? null,
-      signal: connectedNetwork?.signal ?? null,
-      updatedAt: Date.now()
-    })
-  }, [connectedNetwork, wifiEnabled])
 
   const resetAuthForm = () => {
     setAuthTargetId(null)
