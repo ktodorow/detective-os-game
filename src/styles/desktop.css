@@ -1705,16 +1705,13 @@
   line-height: 1.1;
 }
 
-.taskbar-status-icon.notification-toggle,
-.taskbar-status-icon.wifi-toggle {
+.taskbar-clock-toggle {
   border: none;
-  padding: 0;
-  color: inherit;
   cursor: pointer;
+  text-align: right;
 }
 
-.taskbar-status-icon.notification-toggle:hover,
-.taskbar-status-icon.wifi-toggle:hover {
+.taskbar-clock-toggle:hover {
   background: rgba(255, 255, 255, 0.15);
 }
 
@@ -1944,6 +1941,85 @@
   animation: notification-pop-out 0.18s ease-in forwards;
 }
 
+.notification-toast {
+  position: absolute;
+  right: 16px;
+  bottom: 62px;
+  width: min(320px, 88vw);
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(28, 30, 34, 0.96);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+  color: #f6f6f6;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  align-items: start;
+  padding: 12px 14px;
+  text-align: left;
+  z-index: 4;
+  animation: notification-pop 0.2s ease-out;
+}
+
+.notification-toast:hover {
+  background: rgba(38, 41, 46, 0.98);
+}
+
+.notification-toast.is-closing {
+  animation: notification-pop-out 0.18s ease-in forwards;
+}
+
+.notification-toast-main {
+  border: none;
+  background: transparent;
+  color: inherit;
+  padding: 0;
+  text-align: left;
+  display: grid;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.notification-toast-main:focus-visible,
+.notification-toast-close:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.75);
+  outline-offset: 3px;
+}
+
+.notification-toast-close {
+  width: 24px;
+  height: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #f6f6f6;
+  font-size: 0.9rem;
+  line-height: 1;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+
+.notification-toast-close:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.notification-toast-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.notification-toast-body {
+  font-size: 0.78rem;
+  color: #d8d8d8;
+  line-height: 1.35;
+}
+
+.notification-toast-time {
+  font-size: 0.7rem;
+  color: #b9b9b9;
+}
+
 .wifi-panel {
   position: absolute;
   right: 92px;
@@ -2147,6 +2223,77 @@
 .wifi-action {
   font-size: 0.68rem;
   color: #d6dce7;
+}
+
+.volume-panel {
+  position: absolute;
+  right: 16px;
+  bottom: 62px;
+  width: min(280px, 86vw);
+  background: rgba(28, 30, 34, 0.96);
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  z-index: 4;
+  animation: notification-pop 0.2s ease-out;
+}
+
+.volume-panel.is-closing {
+  animation: notification-pop-out 0.18s ease-in forwards;
+}
+
+.volume-header {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #f3f3f3;
+}
+
+.volume-slider-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 10px;
+  color: #e7e7e7;
+  font-size: 0.78rem;
+}
+
+.volume-slider-row input[type='range'] {
+  width: 100%;
+  accent-color: #76c7ff;
+}
+
+.volume-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.volume-actions button {
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #f5f5f5;
+  padding: 5px 10px;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.volume-actions button:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.volume-actions button.is-danger {
+  background: linear-gradient(135deg, #ff5f6d, #ff8a8a);
+  border-color: rgba(120, 40, 40, 0.35);
+  color: #fff;
+}
+
+.volume-note {
+  font-size: 0.72rem;
+  color: #c8d0dc;
 }
 
 .notification-header {
