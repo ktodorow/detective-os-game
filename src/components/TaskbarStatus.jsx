@@ -6,6 +6,8 @@ import { VolumeControl } from './VolumeControl'
 import { WifiCenter } from './WifiCenter'
 
 const CLOSE_ANIMATION_DURATION = 180
+const TASKBAR_CLOCK_TICK_MS = 250
+const IN_GAME_TIME_SCALE = 10 / 2
 const REMINDERS_STORAGE_KEY = 'detective-os.reminders.v1'
 const REMINDER_WARNING_WINDOW_MS = 3 * 60 * 60 * 1000
 const REMINDER_AUTO_DONE_GRACE_MS = 3 * 60 * 1000
@@ -175,9 +177,15 @@ export function TaskbarStatus({ panelRootRef }) {
 
   useEffect(() => {
     if (typeof window === 'undefined') return undefined
-    const timerId = window.setInterval(() => {
-      setCurrentDate(new Date())
-    }, 1000)
+    const realStartMs = Date.now()
+    const gameStartMs = Date.now()
+    const updateClock = () => {
+      const realElapsedMs = Date.now() - realStartMs
+      const gameNowMs = gameStartMs + realElapsedMs * IN_GAME_TIME_SCALE
+      setCurrentDate(new Date(gameNowMs))
+    }
+    updateClock()
+    const timerId = window.setInterval(updateClock, TASKBAR_CLOCK_TICK_MS)
     return () => window.clearInterval(timerId)
   }, [])
 
