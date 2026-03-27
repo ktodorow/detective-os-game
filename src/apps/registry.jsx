@@ -9,6 +9,14 @@ import {
   isAppInstalled,
   setAppInstalled
 } from '../state/appInstallations'
+import {
+  APP_DOWNLOADS_CHANGED_EVENT,
+  MAX_CONCURRENT_DOWNLOADS,
+  cancelAppDownload,
+  getWifiDownloadMbps,
+  loadAppDownloads,
+  startAppDownload
+} from '../state/appDownloads'
 import { resetAppShortcutPath } from '../state/appShortcuts'
 import { RESOLUTION_MODES } from '../state/resolutionContext'
 import {
@@ -26,15 +34,6 @@ const REMINDER_BOARD_VISIBLE_STORAGE_KEY = 'detective-os.reminders.board.visible
 const REMINDER_BOARD_VISIBILITY_CHANGED_EVENT =
   'detective-os:reminder-board-visibility-changed'
 const REMINDER_SYNC_INTERVAL_MS = 30 * 1000
-const DOWNLOAD_TICK_MS = 200
-const DEFAULT_APP_DOWNLOAD_SIZE_MB = 100
-const MAX_CONCURRENT_DOWNLOADS = 3
-const DOWNLOAD_MBPS_BY_SIGNAL = {
-  excellent: 14,
-  good: 9,
-  fair: 5,
-  weak: 2
-}
 const APP_STORE_CATALOG = [
   {
     id: EMAIL_APP_ID,
@@ -183,11 +182,6 @@ const loadReminderItems = () => {
   } catch {
     return []
   }
-}
-
-const getWifiDownloadMbps = (wifiStatus) => {
-  if (!wifiStatus?.enabled || !wifiStatus?.connectedId) return 0
-  return DOWNLOAD_MBPS_BY_SIGNAL[wifiStatus.signal] ?? 3
 }
 
 const ComputerIcon = () => (
@@ -518,9 +512,8 @@ const renderNotepad = (appWindow, { actions, filesystem, ui }) => (
 const AppStoreWindow = ({ actions, ui }) => {
   const [installedAppIds, setInstalledAppIds] = useState(getInstalledAppIds)
   const [wifiStatus, setWifiStatus] = useState(loadWifiStatus)
-  const [downloadState, setDownloadState] = useState(() => ({}))
+  const [downloadState, setDownloadState] = useState(loadAppDownloads)
   const activeDownloadCount = Object.keys(downloadState).length
-  const isDownloadingAny = activeDownloadCount > 0
   const iconDesignId = ui?.iconDesign ?? 'classic'
 
   useEffect(() => {
@@ -548,71 +541,16 @@ const AppStoreWindow = ({ actions, ui }) => {
   }, [])
 
   useEffect(() => {
-    if (!isDownloadingAny || typeof window === 'undefined') return undefined
-    const timerId = window.setInterval(() => {
-      const latestWifiStatus = loadWifiStatus()
-      setWifiStatus(latestWifiStatus)
-      const speedMbps = getWifiDownloadMbps(latestWifiStatus)
-      setDownloadState((prev) => {
-        const activeIds = Object.keys(prev)
-        if (!activeIds.length || speedMbps <= 0) return prev
-        const perAppSpeedMbps = speedMbps / activeIds.length
-        const progressPerSecond =
-          (perAppSpeedMbps / DEFAULT_APP_DOWNLOAD_SIZE_MB) * 100
-        const deltaProgress = progressPerSecond * (DOWNLOAD_TICK_MS / 1000)
-        if (deltaProgress <= 0) return prev
-        const next = { ...prev }
-        let changed = false
-        activeIds.forEach((appId) => {
-          const currentProgress = prev[appId]
-          if (typeof currentProgress !== 'number') return
-          const nextProgress = Math.min(currentProgress + deltaProgress, 100)
-          if (nextProgress !== currentProgress) {
-            next[appId] = nextProgress
-            changed = true
-          }
-        })
-        return changed ? next : prev
-      })
-    }, DOWNLOAD_TICK_MS)
-    return () => window.clearInterval(timerId)
-  }, [isDownloadingAny])
-
-  useEffect(() => {
-    const completedIds = Object.entries(downloadState)
-      .filter(([, progress]) => progress >= 100)
-      .map(([appId]) => appId)
-    if (!completedIds.length) return
-
-    let installedAny = false
-    completedIds.forEach((appId) => {
-      const installedApp = APP_STORE_CATALOG.find((app) => app.id === appId)
-      if (!installedApp || isAppInstalled(appId)) return
-      setAppInstalled(appId, true)
-      installedAny = true
-      pushNotification({
-        id: `app-installed-${appId}-${Date.now()}`,
-        title: 'Download Complete',
-        body: `${installedApp.title} was installed and added to Desktop.`,
-        time: 'Now'
-      })
-    })
-
-    if (installedAny) {
-      setInstalledAppIds(getInstalledAppIds())
+    if (typeof window === 'undefined') return undefined
+    const refresh = () => setDownloadState(loadAppDownloads())
+    refresh()
+    window.addEventListener(APP_DOWNLOADS_CHANGED_EVENT, refresh)
+    window.addEventListener('storage', refresh)
+    return () => {
+      window.removeEventListener(APP_DOWNLOADS_CHANGED_EVENT, refresh)
+      window.removeEventListener('storage', refresh)
     }
-
-    setDownloadState((prev) => {
-      const next = { ...prev }
-      let changed = false
-      completedIds.forEach((appId) => {
-        if (!(appId in next)) return
-        delete next[appId]
-        changed = true
-      })
-      return changed ? next : prev
-    })
-  }, [downloadState])
+  }, [])
 
   const handleInstall = (appId) => {
     if (!appId) return
@@ -622,11 +560,8 @@ const AppStoreWindow = ({ actions, ui }) => {
       setInstalledAppIds(getInstalledAppIds())
       return
     }
-    setDownloadState((prev) => {
-      if (typeof prev[appId] === 'number') return prev
-      if (Object.keys(prev).length >= MAX_CONCURRENT_DOWNLOADS) return prev
-      return { ...prev, [appId]: 0 }
-    })
+    startAppDownload(appId)
+    setDownloadState(loadAppDownloads())
   }
 
   const handleOpenInstalled = (appId) => {
@@ -641,13 +576,9 @@ const AppStoreWindow = ({ actions, ui }) => {
     if (!alreadyInstalled) return
     setAppInstalled(appId, false)
     resetAppShortcutPath(appId)
+    cancelAppDownload(appId)
     setInstalledAppIds(getInstalledAppIds())
-    setDownloadState((prev) => {
-      if (!(appId in prev)) return prev
-      const next = { ...prev }
-      delete next[appId]
-      return next
-    })
+    setDownloadState(loadAppDownloads())
     pushNotification({
       id: `app-uninstalled-${appId}-${Date.now()}`,
       title: 'App Uninstalled',
@@ -692,24 +623,29 @@ const AppStoreWindow = ({ actions, ui }) => {
                 className="app-store-app-icon"
               />
               <div className="app-store-app-main">
-                <div className="app-store-app-name">{app.title}</div>
+                <div className="app-store-app-head">
+                  <div className="app-store-app-name">{app.title}</div>
+                  {installed ? (
+                    <span className="app-store-app-status">Installed</span>
+                  ) : null}
+                </div>
                 <div className="app-store-app-note">
-                  {installed
-                    ? `Installed. ${app.description}`
-                    : isDownloading
-                      ? speedMbps > 0
-                        ? `Downloading at ${speedMbps.toFixed(1)} MB/s`
-                        : 'Waiting for Wi-Fi...'
-                      : app.description}
+                  {isDownloading
+                    ? speedMbps > 0
+                      ? `Downloading at ${speedMbps.toFixed(1)} MB/s`
+                      : 'Waiting for Wi-Fi...'
+                    : app.description}
                 </div>
-                <div className="app-store-progress">
-                  <div
-                    className={`app-store-progress-bar ${installed ? 'is-complete' : ''}`.trim()}
-                    style={{
-                      width: `${Math.round(progress)}%`
-                    }}
-                  />
-                </div>
+                {isDownloading ? (
+                  <div className="app-store-progress">
+                    <div
+                      className={`app-store-progress-bar ${installed ? 'is-complete' : ''}`.trim()}
+                      style={{
+                        width: `${Math.round(progress)}%`
+                      }}
+                    />
+                  </div>
+                ) : null}
               </div>
               {installed ? (
                 <div className="app-store-actions">

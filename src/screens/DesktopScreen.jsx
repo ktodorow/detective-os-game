@@ -12,10 +12,18 @@ import {
   isAppInstalled,
   setAppInstalled
 } from '../state/appInstallations'
+import {
+  DEFAULT_APP_DOWNLOAD_SIZE_MB,
+  DOWNLOAD_TICK_MS,
+  getWifiDownloadMbps,
+  loadAppDownloads,
+  updateAppDownloads
+} from '../state/appDownloads'
 import { resetAppShortcutPath, setAppShortcutPath } from '../state/appShortcuts'
 import { useFilesystem } from '../state/filesystemContext'
 import { pushNotification } from '../state/notifications'
 import { useResolution } from '../state/resolutionContext'
+import { loadWifiStatus } from '../state/wifiStatus'
 import '../styles/desktop.css'
 
 const WINDOW_CLOSE_DURATION = 220
@@ -244,6 +252,84 @@ function DesktopSurface({ viewportRef }) {
         syncVisibility
       )
       window.removeEventListener('storage', syncVisibility)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined
+    let lastTickMs = Date.now()
+
+    const processDownloads = () => {
+      const nowMs = Date.now()
+      const elapsedMs = Math.max(nowMs - lastTickMs, 0)
+      lastTickMs = nowMs
+      if (elapsedMs <= 0) return
+
+      const wifiStatus = loadWifiStatus()
+      const totalSpeedMbps = getWifiDownloadMbps(wifiStatus)
+      if (totalSpeedMbps <= 0) return
+
+      const completedAppIds = []
+      updateAppDownloads((prev) => {
+        const activeIds = Object.keys(prev)
+        if (!activeIds.length) return prev
+
+        const perAppSpeedMbps = totalSpeedMbps / activeIds.length
+        const progressPerSecond =
+          (perAppSpeedMbps / DEFAULT_APP_DOWNLOAD_SIZE_MB) * 100
+        const deltaProgress = progressPerSecond * (elapsedMs / 1000)
+        if (deltaProgress <= 0) return prev
+
+        const next = { ...prev }
+        let changed = false
+        activeIds.forEach((appId) => {
+          const currentProgress = prev[appId]
+          if (typeof currentProgress !== 'number') return
+          const nextProgress = Math.min(currentProgress + deltaProgress, 100)
+          if (nextProgress >= 100) {
+            delete next[appId]
+            completedAppIds.push(appId)
+            changed = true
+            return
+          }
+          if (nextProgress !== currentProgress) {
+            next[appId] = nextProgress
+            changed = true
+          }
+        })
+        return changed ? next : prev
+      })
+
+      if (!completedAppIds.length) return
+      completedAppIds.forEach((appId) => {
+        if (!appId || isAppInstalled(appId)) return
+        setAppInstalled(appId, true)
+        const appTitle = getAppDefinition(appId)?.title ?? 'App'
+        pushNotification({
+          id: `app-installed-${appId}-${Date.now()}`,
+          title: 'Download Complete',
+          body: `${appTitle} was installed and added to Desktop.`,
+          time: 'Now'
+        })
+      })
+    }
+
+    const timerId = window.setInterval(processDownloads, DOWNLOAD_TICK_MS)
+    const handleVisibilityChange = () => {
+      if (document.hidden) return
+      processDownloads()
+    }
+    window.addEventListener('focus', processDownloads)
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
+    if (Object.keys(loadAppDownloads()).length > 0) {
+      processDownloads()
+    }
+
+    return () => {
+      window.clearInterval(timerId)
+      window.removeEventListener('focus', processDownloads)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
     }
   }, [])
 
