@@ -203,6 +203,14 @@
   background: linear-gradient(135deg, #ffe5b8, #f2b866);
 }
 
+.explorer-icon.friend-media {
+  background: linear-gradient(135deg, #d9e9ff, #8fb2f2);
+}
+
+.explorer-icon.box-browser {
+  background: linear-gradient(135deg, #d9f0ff, #8fd6f2);
+}
+
 .explorer-icon.file {
   background: linear-gradient(135deg, #f0f3f8, #cfd8e6);
 }

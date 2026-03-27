@@ -176,6 +176,14 @@
   background: linear-gradient(135deg, #ffe5b8, #f2b866);
 }
 
+.icon-graphic.friend-media {
+  background: linear-gradient(135deg, #d9e9ff, #8fb2f2);
+}
+
+.icon-graphic.box-browser {
+  background: linear-gradient(135deg, #d9f0ff, #8fd6f2);
+}
+
 .icon-graphic.file {
   background: linear-gradient(135deg, #f2f4f7, #c9d1db);
 }
@@ -281,6 +289,16 @@
   background-image: url('/icons/classic/reminder.svg');
 }
 
+.desktop-screen[data-icon-design='classic'] .icon-graphic.friend-media,
+.desktop-screen[data-icon-design='classic'] .explorer-icon.friend-media {
+  background-image: url('/icons/classic/friendmedia.svg');
+}
+
+.desktop-screen[data-icon-design='classic'] .icon-graphic.box-browser,
+.desktop-screen[data-icon-design='classic'] .explorer-icon.box-browser {
+  background-image: url('/icons/classic/boxbrowser.svg');
+}
+
 .desktop-screen[data-icon-design='classic'] .icon-graphic.file,
 .desktop-screen[data-icon-design='classic'] .explorer-icon.file {
   background-image: url('/icons/classic/file.svg');
@@ -329,6 +347,16 @@
 .desktop-screen[data-icon-design='soft'] .icon-graphic.reminder,
 .desktop-screen[data-icon-design='soft'] .explorer-icon.reminder {
   background-image: url('/icons/soft/reminder.svg');
+}
+
+.desktop-screen[data-icon-design='soft'] .icon-graphic.friend-media,
+.desktop-screen[data-icon-design='soft'] .explorer-icon.friend-media {
+  background-image: url('/icons/soft/friendmedia.svg');
+}
+
+.desktop-screen[data-icon-design='soft'] .icon-graphic.box-browser,
+.desktop-screen[data-icon-design='soft'] .explorer-icon.box-browser {
+  background-image: url('/icons/soft/boxbrowser.svg');
 }
 
 .desktop-screen[data-icon-design='soft'] .icon-graphic.file,
@@ -381,6 +409,16 @@
   background-image: url('/icons/cyber/reminder.svg');
 }
 
+.desktop-screen[data-icon-design='cyber'] .icon-graphic.friend-media,
+.desktop-screen[data-icon-design='cyber'] .explorer-icon.friend-media {
+  background-image: url('/icons/cyber/friendmedia.svg');
+}
+
+.desktop-screen[data-icon-design='cyber'] .icon-graphic.box-browser,
+.desktop-screen[data-icon-design='cyber'] .explorer-icon.box-browser {
+  background-image: url('/icons/cyber/boxbrowser.svg');
+}
+
 .desktop-screen[data-icon-design='cyber'] .icon-graphic.file,
 .desktop-screen[data-icon-design='cyber'] .explorer-icon.file {
   background-image: url('/icons/cyber/file.svg');
@@ -429,6 +467,16 @@
 .desktop-screen[data-icon-design='midnight'] .icon-graphic.reminder,
 .desktop-screen[data-icon-design='midnight'] .explorer-icon.reminder {
   background-image: url('/icons/midnight/reminder.svg');
+}
+
+.desktop-screen[data-icon-design='midnight'] .icon-graphic.friend-media,
+.desktop-screen[data-icon-design='midnight'] .explorer-icon.friend-media {
+  background-image: url('/icons/midnight/friendmedia.svg');
+}
+
+.desktop-screen[data-icon-design='midnight'] .icon-graphic.box-browser,
+.desktop-screen[data-icon-design='midnight'] .explorer-icon.box-browser {
+  background-image: url('/icons/midnight/boxbrowser.svg');
 }
 
 .desktop-screen[data-icon-design='midnight'] .icon-graphic.file,
@@ -481,6 +529,16 @@
   background-image: url('/icons/candy/reminder.svg');
 }
 
+.desktop-screen[data-icon-design='candy'] .icon-graphic.friend-media,
+.desktop-screen[data-icon-design='candy'] .explorer-icon.friend-media {
+  background-image: url('/icons/candy/friendmedia.svg');
+}
+
+.desktop-screen[data-icon-design='candy'] .icon-graphic.box-browser,
+.desktop-screen[data-icon-design='candy'] .explorer-icon.box-browser {
+  background-image: url('/icons/candy/boxbrowser.svg');
+}
+
 .desktop-screen[data-icon-design='candy'] .icon-graphic.file,
 .desktop-screen[data-icon-design='candy'] .explorer-icon.file {
   background-image: url('/icons/candy/file.svg');
@@ -529,6 +587,16 @@
 .desktop-screen[data-icon-design='matrix'] .icon-graphic.reminder,
 .desktop-screen[data-icon-design='matrix'] .explorer-icon.reminder {
   background-image: url('/icons/matrix/reminder.svg');
+}
+
+.desktop-screen[data-icon-design='matrix'] .icon-graphic.friend-media,
+.desktop-screen[data-icon-design='matrix'] .explorer-icon.friend-media {
+  background-image: url('/icons/matrix/friendmedia.svg');
+}
+
+.desktop-screen[data-icon-design='matrix'] .icon-graphic.box-browser,
+.desktop-screen[data-icon-design='matrix'] .explorer-icon.box-browser {
+  background-image: url('/icons/matrix/boxbrowser.svg');
 }
 
 .desktop-screen[data-icon-design='matrix'] .icon-graphic.file,
@@ -1070,10 +1138,11 @@
   height: 100%;
   padding: 20px 22px;
   display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
   gap: 12px;
-  align-content: start;
   background: linear-gradient(180deg, #fbfcff 0%, #edf2fb 100%);
   color: #1f2430;
+  overflow: hidden;
 }
 
 .app-store-title {
@@ -1089,6 +1158,9 @@
 .app-store-list {
   display: grid;
   gap: 10px;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 4px;
 }
 
 .app-store-card {
