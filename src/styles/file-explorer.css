@@ -191,6 +191,18 @@
   background: linear-gradient(135deg, #fff0c4, #ffd67a);
 }
 
+.explorer-icon.app-store {
+  background: linear-gradient(135deg, #dff3ff, #98d1ff);
+}
+
+.explorer-icon.email {
+  background: linear-gradient(135deg, #d9ecff, #8fbaf2);
+}
+
+.explorer-icon.reminder {
+  background: linear-gradient(135deg, #ffe5b8, #f2b866);
+}
+
 .explorer-icon.file {
   background: linear-gradient(135deg, #f0f3f8, #cfd8e6);
 }

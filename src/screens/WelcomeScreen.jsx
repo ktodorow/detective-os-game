@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useAudioSettings } from '../state/audioSettingsContext'
 import '../styles/welcome.css'
 
 const WELCOME_SOUND_SRC = '/audio/welcome.mp3'
@@ -7,6 +8,7 @@ const LOGIN_DELAY = 2000
 const FADE_OUT_DELAY = 700
 
 export function WelcomeScreen({ onLoginSuccess, expectedPassword = '123' }) {
+  const { volume: masterVolume, muted } = useAudioSettings()
   const [showLogin, setShowLogin] = useState(false)
   const [hideWelcome, setHideWelcome] = useState(false)
   const [password, setPassword] = useState('')
@@ -19,9 +21,9 @@ export function WelcomeScreen({ onLoginSuccess, expectedPassword = '123' }) {
     const audio = welcomeAudioRef.current
     if (!audio) return
     audio.currentTime = 0
-    audio.volume = 0.8
+    audio.volume = (muted ? 0 : masterVolume) * 0.8
     audio.play().catch(() => {})
-  }, [])
+  }, [masterVolume, muted])
 
   useEffect(() => {
     if (!showLogin) return

@@ -13,6 +13,10 @@ export function DesktopIconLayer({
   items,
   onOpenApp,
   onOpenFile,
+  onAppContextMenu,
+  onAppDropToFolder,
+  onEntryDropToTrash,
+  onEntryDropToFolder,
   onFileContextMenu
 }) {
   const [iconPositions, setIconPositions] = useState({})
@@ -27,6 +31,16 @@ export function DesktopIconLayer({
   const rafRef = useRef(0)
   const pendingPositionRef = useRef(null)
   const iconItems = items
+  const TRASH_ICON_ID = 'app:trash'
+
+  const isPointInsideIcon = (x, y, position) =>
+    Boolean(
+      position &&
+        x >= position.x &&
+        x <= position.x + ICON_WIDTH &&
+        y >= position.y &&
+        y <= position.y + ICON_HEIGHT
+    )
 
   const getDefaultPosition = (index) => {
     const availableHeight = Math.max(
@@ -92,6 +106,18 @@ export function DesktopIconLayer({
       }
     }
     return clampCell(startCell, cols, rows)
+  }
+
+  const findNextStackedCell = (occupied, cols, rows) => {
+    for (let col = 0; col < cols; col += 1) {
+      for (let row = 0; row < rows; row += 1) {
+        const key = `${col}:${row}`
+        if (!occupied.has(key)) {
+          return { col, row }
+        }
+      }
+    }
+    return { col: 0, row: 0 }
   }
 
   useEffect(() => {
@@ -173,14 +199,12 @@ export function DesktopIconLayer({
         }
       })
 
-      iconItems.forEach((item, index) => {
+      iconItems.forEach((item) => {
         if (!next[item.id]) {
-          const basePos = clampPosition(getDefaultPosition(index))
-          const preferredCell =
+          const openCell =
             item.id === trashId && shouldAnchorTrash && trashCell
               ? trashCell
-              : clampCell(positionToCell(basePos), cols, rows)
-          const openCell = findOpenCell(preferredCell, occupied, cols, rows)
+              : findNextStackedCell(occupied, cols, rows)
           next[item.id] = cellToPosition(openCell)
           occupied.add(`${openCell.col}:${openCell.row}`)
           changed = true
@@ -248,6 +272,45 @@ export function DesktopIconLayer({
           x: current.baseX,
           y: current.baseY
         }
+        const draggedItem = iconItems.find((item) => item.id === current.id)
+        const trashPosition = iconPositions[TRASH_ICON_ID]
+        const dropCenterX = finalPosition.x + ICON_WIDTH / 2
+        const dropCenterY = finalPosition.y + ICON_HEIGHT / 2
+        const isEntryDrag =
+          draggedItem?.type === 'entry' || draggedItem?.type === 'file'
+        const isAppDrag = draggedItem?.type === 'app'
+        const droppedOnTrash =
+          isEntryDrag &&
+          isPointInsideIcon(dropCenterX, dropCenterY, trashPosition)
+
+        const folderTarget =
+          isEntryDrag || isAppDrag
+            ? iconItems.find(
+                (item) =>
+                  item.id !== current.id &&
+                  item.type === 'entry' &&
+                  item.entry?.type === 'dir' &&
+                  isPointInsideIcon(
+                    dropCenterX,
+                    dropCenterY,
+                    iconPositions[item.id]
+                  )
+              )
+            : null
+
+        let dropHandled = false
+        if (droppedOnTrash) {
+          dropHandled = onEntryDropToTrash?.(draggedItem.entry) !== false
+        } else if (folderTarget) {
+          if (isAppDrag) {
+            dropHandled =
+              onAppDropToFolder?.(draggedItem.app, folderTarget.entry) !== false
+          } else {
+            dropHandled =
+              onEntryDropToFolder?.(draggedItem.entry, folderTarget.entry) !== false
+          }
+        }
+
         const cols = Math.max(
           Math.floor(
             (viewportSize.width - ICON_PADDING_X * 2 + ICON_GAP) /
@@ -265,17 +328,19 @@ export function DesktopIconLayer({
           ),
           1
         )
-        setIconPositions((prev) => {
-          const occupied = new Set()
-          Object.entries(prev).forEach(([key, position]) => {
-            if (key === current.id) return
-            const cell = clampCell(positionToCell(position), cols, rows)
-            occupied.add(`${cell.col}:${cell.row}`)
+        if (!dropHandled) {
+          setIconPositions((prev) => {
+            const occupied = new Set()
+            Object.entries(prev).forEach(([key, position]) => {
+              if (key === current.id) return
+              const cell = clampCell(positionToCell(position), cols, rows)
+              occupied.add(`${cell.col}:${cell.row}`)
+            })
+            const targetCell = clampCell(positionToCell(finalPosition), cols, rows)
+            const openCell = findOpenCell(targetCell, occupied, cols, rows)
+            return { ...prev, [current.id]: cellToPosition(openCell) }
           })
-          const targetCell = clampCell(positionToCell(finalPosition), cols, rows)
-          const openCell = findOpenCell(targetCell, occupied, cols, rows)
-          return { ...prev, [current.id]: cellToPosition(openCell) }
-        })
+        }
       }
       if (current) {
         const node = iconRefs.current.get(current.id)
@@ -300,7 +365,16 @@ export function DesktopIconLayer({
       window.removeEventListener('mousemove', handleMouseMove)
       window.removeEventListener('mouseup', handleMouseUp)
     }
-  }, [draggingId, viewportRef, viewportSize])
+  }, [
+    draggingId,
+    iconItems,
+    iconPositions,
+    onEntryDropToFolder,
+    onEntryDropToTrash,
+    onAppDropToFolder,
+    viewportRef,
+    viewportSize
+  ])
 
   const handleIconMouseDown = (event, id) => {
     if (event.button !== 0) return
@@ -365,6 +439,9 @@ export function DesktopIconLayer({
               onClick={() => setSelectedIconId(item.id)}
               onDoubleClick={() =>
                 handleIconDoubleClick(item.id, () => onOpenApp(item.app.id))
+              }
+              onContextMenu={(event) =>
+                onAppContextMenu?.(event, item.app)
               }
             >
               <span

@@ -6,6 +6,7 @@ import { DesktopScreen } from './screens/DesktopScreen'
 import { LoadingScreen } from './screens/LoadingScreen'
 import { WelcomeScreen } from './screens/WelcomeScreen'
 import { FLOW_EVENTS, FLOW_STATES, flowReducer } from './state/flowMachine'
+import { AudioSettingsProvider } from './state/audioSettingsContext'
 import { FilesystemProvider } from './state/filesystemContext'
 import { ResolutionProvider } from './state/resolutionContext'
 
@@ -70,7 +71,9 @@ function App() {
 
   return (
     <ResolutionProvider>
-      <FilesystemProvider>{content}</FilesystemProvider>
+      <AudioSettingsProvider>
+        <FilesystemProvider>{content}</FilesystemProvider>
+      </AudioSettingsProvider>
     </ResolutionProvider>
   )
 }

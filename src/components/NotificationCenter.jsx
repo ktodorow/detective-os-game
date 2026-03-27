@@ -1,15 +1,22 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { NOTIFICATION_EVENT } from '../state/notifications'
 
 const SAMPLE_DELAY = 9000
 const CLOSE_ANIMATION_DURATION = 180
+const TOAST_DURATION = 10000
 
 export function NotificationCenter({ panelRootRef }) {
   const panelRef = useRef(null)
   const buttonRef = useRef(null)
   const closeTimerRef = useRef(null)
+  const toastTimerRef = useRef(null)
+  const toastCloseTimerRef = useRef(null)
+  const knownNotificationIdsRef = useRef(new Set())
   const [isOpen, setIsOpen] = useState(false)
   const [isClosing, setIsClosing] = useState(false)
+  const [activeToast, setActiveToast] = useState(null)
+  const [isToastClosing, setIsToastClosing] = useState(false)
   const [notifications, setNotifications] = useState(() => [
     {
       id: 'sync-01',
@@ -21,7 +28,7 @@ export function NotificationCenter({ panelRootRef }) {
     {
       id: 'tip-01',
       title: 'System Tip',
-      body: 'Right-click the desktop for settings.',
+      body: 'Right-click the desktop for settings or background change.',
       time: '2m',
       isRead: true
     }
@@ -29,7 +36,7 @@ export function NotificationCenter({ panelRootRef }) {
 
   const unreadCount = notifications.filter((item) => !item.isRead).length
 
-  const requestClose = () => {
+  const requestClose = useCallback(() => {
     if (!isOpen || isClosing) return
     if (typeof window === 'undefined') {
       setIsOpen(false)
@@ -42,7 +49,51 @@ export function NotificationCenter({ panelRootRef }) {
       setIsClosing(false)
       closeTimerRef.current = null
     }, CLOSE_ANIMATION_DURATION)
-  }
+  }, [isClosing, isOpen])
+
+  const clearToastTimers = useCallback(() => {
+    if (typeof window === 'undefined') return
+    if (toastTimerRef.current) {
+      window.clearTimeout(toastTimerRef.current)
+      toastTimerRef.current = null
+    }
+    if (toastCloseTimerRef.current) {
+      window.clearTimeout(toastCloseTimerRef.current)
+      toastCloseTimerRef.current = null
+    }
+  }, [])
+
+  const dismissToast = useCallback(
+    (immediate = false) => {
+      clearToastTimers()
+      if (immediate || typeof window === 'undefined') {
+        setActiveToast(null)
+        setIsToastClosing(false)
+        return
+      }
+      setIsToastClosing(true)
+      toastCloseTimerRef.current = window.setTimeout(() => {
+        setActiveToast(null)
+        setIsToastClosing(false)
+        toastCloseTimerRef.current = null
+      }, CLOSE_ANIMATION_DURATION)
+    },
+    [clearToastTimers]
+  )
+
+  const showToast = useCallback(
+    (nextToast) => {
+      if (!nextToast) return
+      clearToastTimers()
+      setIsToastClosing(false)
+      setActiveToast(nextToast)
+      if (typeof window === 'undefined') return
+      toastTimerRef.current = window.setTimeout(() => {
+        dismissToast()
+      }, TOAST_DURATION)
+    },
+    [clearToastTimers, dismissToast]
+  )
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -62,6 +113,38 @@ export function NotificationCenter({ panelRootRef }) {
   }, [])
 
   useEffect(() => {
+    if (typeof window === 'undefined') return undefined
+    const handleNotification = (event) => {
+      const payload = event?.detail
+      if (!payload || typeof payload !== 'object') return
+      const title =
+        typeof payload.title === 'string' && payload.title.trim()
+          ? payload.title.trim()
+          : 'Notification'
+      const body = typeof payload.body === 'string' ? payload.body : ''
+      const time =
+        typeof payload.time === 'string' && payload.time.trim()
+          ? payload.time.trim()
+          : 'Now'
+      const isRead = payload.isRead === true
+      const id =
+        typeof payload.id === 'string' && payload.id
+          ? payload.id
+          : `notification-${Date.now()}`
+
+      setNotifications((prev) => {
+        if (prev.some((item) => item.id === id)) return prev
+        return [{ id, title, body, time, isRead }, ...prev]
+      })
+    }
+
+    window.addEventListener(NOTIFICATION_EVENT, handleNotification)
+    return () => {
+      window.removeEventListener(NOTIFICATION_EVENT, handleNotification)
+    }
+  }, [])
+
+  useEffect(() => {
     if (!isOpen) return
     const handlePointerDown = (event) => {
       const panel = panelRef.current
@@ -74,7 +157,7 @@ export function NotificationCenter({ panelRootRef }) {
 
     window.addEventListener('mousedown', handlePointerDown)
     return () => window.removeEventListener('mousedown', handlePointerDown)
-  }, [isOpen])
+  }, [isOpen, requestClose])
 
   useEffect(() => {
     const handleKeyDown = (event) => {
@@ -85,12 +168,39 @@ export function NotificationCenter({ panelRootRef }) {
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [])
+  }, [requestClose])
+
+  useEffect(() => {
+    if (!notifications.length) return
+    if (!knownNotificationIdsRef.current.size) {
+      notifications.forEach((item) =>
+        knownNotificationIdsRef.current.add(item.id)
+      )
+      return
+    }
+
+    const newest = notifications.find(
+      (item) => !knownNotificationIdsRef.current.has(item.id)
+    )
+
+    notifications.forEach((item) => knownNotificationIdsRef.current.add(item.id))
+
+    if (newest) {
+      showToast(newest)
+    }
+  }, [notifications, showToast])
 
   useEffect(() => {
     return () => {
+      if (typeof window === 'undefined') return
       if (closeTimerRef.current) {
         window.clearTimeout(closeTimerRef.current)
+      }
+      if (toastTimerRef.current) {
+        window.clearTimeout(toastTimerRef.current)
+      }
+      if (toastCloseTimerRef.current) {
+        window.clearTimeout(toastCloseTimerRef.current)
       }
     }
   }, [])
@@ -150,6 +260,39 @@ export function NotificationCenter({ panelRootRef }) {
     </section>
   ) : null
 
+  const toast = activeToast ? (
+    <section
+      className={`notification-toast ${isToastClosing ? 'is-closing' : ''}`.trim()}
+      aria-live="polite"
+    >
+      <button
+        type="button"
+        className="notification-toast-main"
+        onClick={() => {
+          dismissToast(true)
+          if (isClosing && closeTimerRef.current) {
+            window.clearTimeout(closeTimerRef.current)
+            closeTimerRef.current = null
+            setIsClosing(false)
+          }
+          setIsOpen(true)
+        }}
+      >
+        <div className="notification-toast-title">{activeToast.title}</div>
+        <div className="notification-toast-body">{activeToast.body}</div>
+        <div className="notification-toast-time">{activeToast.time}</div>
+      </button>
+      <button
+        type="button"
+        className="notification-toast-close"
+        aria-label="Close notification popup"
+        onClick={() => dismissToast(true)}
+      >
+        ×
+      </button>
+    </section>
+  ) : null
+
   return (
     <>
       <button
@@ -184,6 +327,11 @@ export function NotificationCenter({ panelRootRef }) {
         ? panelRootRef?.current
           ? createPortal(panel, panelRootRef.current)
           : panel
+        : null}
+      {toast
+        ? panelRootRef?.current
+          ? createPortal(toast, panelRootRef.current)
+          : toast
         : null}
     </>
   )

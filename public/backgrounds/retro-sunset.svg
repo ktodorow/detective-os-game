@@ -1,0 +1,28 @@
+<svg width="1600" height="900" viewBox="0 0 1600 900" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="sky" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#2a103e"/>
+      <stop offset="45%" stop-color="#b33a68"/>
+      <stop offset="100%" stop-color="#f69b63"/>
+    </linearGradient>
+    <linearGradient id="ground" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#13151f"/>
+      <stop offset="100%" stop-color="#090a10"/>
+    </linearGradient>
+    <pattern id="scan" width="8" height="8" patternUnits="userSpaceOnUse">
+      <rect width="8" height="1" fill="#ffffff10"/>
+    </pattern>
+  </defs>
+  <rect width="1600" height="900" fill="url(#sky)"/>
+  <circle cx="800" cy="360" r="170" fill="#ffd77a"/>
+  <g stroke="#ef7e6b" stroke-width="10" opacity="0.8">
+    <line x1="640" y1="290" x2="960" y2="290"/>
+    <line x1="630" y1="330" x2="970" y2="330"/>
+    <line x1="620" y1="370" x2="980" y2="370"/>
+    <line x1="610" y1="410" x2="990" y2="410"/>
+    <line x1="600" y1="450" x2="1000" y2="450"/>
+  </g>
+  <rect x="0" y="520" width="1600" height="380" fill="url(#ground)"/>
+  <path d="M0 730 L220 610 L370 700 L560 590 L760 760 L940 640 L1120 760 L1320 620 L1600 760 V900 H0 Z" fill="#0d0f18"/>
+  <rect width="1600" height="900" fill="url(#scan)"/>
+</svg>

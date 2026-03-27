@@ -83,22 +83,51 @@ export function useWindowManager(viewportRef) {
         const topWindow = existingOfType.reduce((best, current) =>
           current.zIndex > best.zIndex ? current : best
         )
+        const updates = { isMinimized: false, zIndex }
+        if (overrides.title !== undefined) {
+          updates.title = title
+        }
+        if (overrides.content !== undefined) {
+          updates.content = overrides.content
+        }
+        if (overrides.filename !== undefined) {
+          updates.filename = overrides.filename
+        }
+        if (overrides.path !== undefined) {
+          updates.path = overrides.path
+        }
+        if (overrides.payload !== undefined) {
+          updates.payload = overrides.payload
+        }
         return prev.map((window) =>
           window.id === topWindow.id
-            ? { ...window, isMinimized: false, zIndex }
+            ? { ...window, ...updates }
             : window
         )
       }
       const id = windowIdRef.current++
-      const offset = (prev.length * 24) % 120
+      const topSameTypeWindow =
+        existingOfType.length > 0
+          ? existingOfType.reduce((best, current) =>
+              current.zIndex > best.zIndex ? current : best
+            )
+          : null
+      const hasSameTypeAnchor =
+        Boolean(topSameTypeWindow) && !topSameTypeWindow.isMaximized
+      const horizontalOffset = hasSameTypeAnchor ? 32 : (prev.length * 24) % 120
+      const verticalOffset = hasSameTypeAnchor ? 0 : (prev.length * 24) % 120
       const bounds =
         viewportSize.width && viewportSize.height
           ? viewportSize
           : { width: defaults.width, height: defaults.height + TASKBAR_HEIGHT }
       const rect = clampRect(
         {
-          x: baseRect.x + offset,
-          y: baseRect.y + offset,
+          x: hasSameTypeAnchor
+            ? topSameTypeWindow.x + horizontalOffset
+            : baseRect.x + horizontalOffset,
+          y: hasSameTypeAnchor
+            ? topSameTypeWindow.y + verticalOffset
+            : baseRect.y + verticalOffset,
           width: baseRect.width,
           height: baseRect.height
         },

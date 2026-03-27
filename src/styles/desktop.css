@@ -1,6 +1,10 @@
 .desktop-screen {
   height: 100%;
-  background: #0c0e10 url('/wallpaper.jpg') center/cover no-repeat;
+  background-color: #0c0e10;
+  background-image: var(--desktop-background-image, url('/wallpaper.jpg'));
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
   position: relative;
   overflow: hidden;
   font-family: 'Space Grotesk', 'Segoe UI', sans-serif;
@@ -30,6 +34,74 @@
   position: absolute;
   inset: 0 0 48px 0;
   z-index: 1;
+}
+
+.desktop-reminder-board {
+  position: absolute;
+  top: 78px;
+  right: 22px;
+  width: min(460px, 44vw);
+  min-height: 180px;
+  max-height: 260px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.26);
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.06) 0%,
+    rgba(255, 255, 255, 0.02) 100%
+  );
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06),
+    0 12px 26px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(2px);
+  z-index: 1;
+  pointer-events: none;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 10px;
+  padding: 12px 14px;
+  opacity: 0;
+  transform: translateY(8px) scale(0.985);
+  transition: opacity 240ms ease, transform 240ms ease;
+}
+
+.desktop-reminder-board.is-visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.desktop-reminder-board-title {
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: rgba(246, 246, 246, 0.85);
+}
+
+.desktop-reminder-board-list {
+  display: grid;
+  gap: 8px;
+  align-content: start;
+  overflow: hidden;
+}
+
+.desktop-reminder-board-item {
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.06);
+  padding: 8px 10px;
+  display: grid;
+  gap: 5px;
+}
+
+.desktop-reminder-board-text {
+  font-size: 0.82rem;
+  color: #f4f4f4;
+  line-height: 1.35;
+  word-break: break-word;
+}
+
+.desktop-reminder-board-time {
+  font-size: 0.7rem;
+  color: rgba(232, 232, 232, 0.78);
 }
 
 .desktop-icon {
@@ -92,6 +164,18 @@
   background: linear-gradient(135deg, #fdf1c9, #f3d37a);
 }
 
+.icon-graphic.app-store {
+  background: linear-gradient(135deg, #d5f1ff, #89caff);
+}
+
+.icon-graphic.email {
+  background: linear-gradient(135deg, #d9ecff, #8fbaf2);
+}
+
+.icon-graphic.reminder {
+  background: linear-gradient(135deg, #ffe5b8, #f2b866);
+}
+
 .icon-graphic.file {
   background: linear-gradient(135deg, #f2f4f7, #c9d1db);
 }
@@ -115,6 +199,351 @@
   border-radius: 50%;
   background: #ffb347;
   box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.75);
+}
+
+.desktop-screen[data-icon-design='classic'] .icon-graphic,
+.desktop-screen[data-icon-design='classic'] .explorer-icon,
+.desktop-screen[data-icon-design='soft'] .icon-graphic,
+.desktop-screen[data-icon-design='soft'] .explorer-icon,
+.desktop-screen[data-icon-design='cyber'] .icon-graphic,
+.desktop-screen[data-icon-design='cyber'] .explorer-icon,
+.desktop-screen[data-icon-design='midnight'] .icon-graphic,
+.desktop-screen[data-icon-design='midnight'] .explorer-icon,
+.desktop-screen[data-icon-design='candy'] .icon-graphic,
+.desktop-screen[data-icon-design='candy'] .explorer-icon,
+.desktop-screen[data-icon-design='matrix'] .icon-graphic,
+.desktop-screen[data-icon-design='matrix'] .explorer-icon {
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  background-color: transparent;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 112% 112%;
+}
+
+.desktop-screen[data-icon-design='classic'] .icon-graphic svg,
+.desktop-screen[data-icon-design='classic'] .explorer-icon svg,
+.desktop-screen[data-icon-design='soft'] .icon-graphic svg,
+.desktop-screen[data-icon-design='soft'] .explorer-icon svg,
+.desktop-screen[data-icon-design='cyber'] .icon-graphic svg,
+.desktop-screen[data-icon-design='cyber'] .explorer-icon svg,
+.desktop-screen[data-icon-design='midnight'] .icon-graphic svg,
+.desktop-screen[data-icon-design='midnight'] .explorer-icon svg,
+.desktop-screen[data-icon-design='candy'] .icon-graphic svg,
+.desktop-screen[data-icon-design='candy'] .explorer-icon svg,
+.desktop-screen[data-icon-design='matrix'] .icon-graphic svg,
+.desktop-screen[data-icon-design='matrix'] .explorer-icon svg {
+  display: none;
+}
+
+.desktop-screen[data-icon-design='classic'] .icon-graphic.trash-full::after,
+.desktop-screen[data-icon-design='soft'] .icon-graphic.trash-full::after,
+.desktop-screen[data-icon-design='cyber'] .icon-graphic.trash-full::after,
+.desktop-screen[data-icon-design='midnight'] .icon-graphic.trash-full::after,
+.desktop-screen[data-icon-design='candy'] .icon-graphic.trash-full::after,
+.desktop-screen[data-icon-design='matrix'] .icon-graphic.trash-full::after {
+  display: none;
+}
+
+.desktop-screen[data-icon-design='classic'] .icon-graphic.folder,
+.desktop-screen[data-icon-design='classic'] .explorer-icon.folder {
+  background-image: url('/icons/classic/folder.svg');
+}
+
+.desktop-screen[data-icon-design='classic'] .icon-graphic.computer,
+.desktop-screen[data-icon-design='classic'] .explorer-icon.computer {
+  background-image: url('/icons/classic/computer.svg');
+}
+
+.desktop-screen[data-icon-design='classic'] .icon-graphic.settings,
+.desktop-screen[data-icon-design='classic'] .explorer-icon.settings {
+  background-image: url('/icons/classic/settings.svg');
+}
+
+.desktop-screen[data-icon-design='classic'] .icon-graphic.notepad,
+.desktop-screen[data-icon-design='classic'] .explorer-icon.notepad {
+  background-image: url('/icons/classic/notepad.svg');
+}
+
+.desktop-screen[data-icon-design='classic'] .icon-graphic.app-store,
+.desktop-screen[data-icon-design='classic'] .explorer-icon.app-store {
+  background-image: url('/icons/classic/app-store.svg');
+}
+
+.desktop-screen[data-icon-design='classic'] .icon-graphic.email,
+.desktop-screen[data-icon-design='classic'] .explorer-icon.email {
+  background-image: url('/icons/classic/email.svg');
+}
+
+.desktop-screen[data-icon-design='classic'] .icon-graphic.reminder,
+.desktop-screen[data-icon-design='classic'] .explorer-icon.reminder {
+  background-image: url('/icons/classic/reminder.svg');
+}
+
+.desktop-screen[data-icon-design='classic'] .icon-graphic.file,
+.desktop-screen[data-icon-design='classic'] .explorer-icon.file {
+  background-image: url('/icons/classic/file.svg');
+}
+
+.desktop-screen[data-icon-design='classic'] .icon-graphic.trash,
+.desktop-screen[data-icon-design='classic'] .explorer-icon.trash {
+  background-image: url('/icons/classic/trash.svg');
+}
+
+.desktop-screen[data-icon-design='classic'] .icon-graphic.trash-full,
+.desktop-screen[data-icon-design='classic'] .explorer-icon.trash-full {
+  background-image: url('/icons/classic/trash-full.svg');
+}
+
+.desktop-screen[data-icon-design='soft'] .icon-graphic.folder,
+.desktop-screen[data-icon-design='soft'] .explorer-icon.folder {
+  background-image: url('/icons/soft/folder.svg');
+}
+
+.desktop-screen[data-icon-design='soft'] .icon-graphic.computer,
+.desktop-screen[data-icon-design='soft'] .explorer-icon.computer {
+  background-image: url('/icons/soft/computer.svg');
+}
+
+.desktop-screen[data-icon-design='soft'] .icon-graphic.settings,
+.desktop-screen[data-icon-design='soft'] .explorer-icon.settings {
+  background-image: url('/icons/soft/settings.svg');
+}
+
+.desktop-screen[data-icon-design='soft'] .icon-graphic.notepad,
+.desktop-screen[data-icon-design='soft'] .explorer-icon.notepad {
+  background-image: url('/icons/soft/notepad.svg');
+}
+
+.desktop-screen[data-icon-design='soft'] .icon-graphic.app-store,
+.desktop-screen[data-icon-design='soft'] .explorer-icon.app-store {
+  background-image: url('/icons/soft/app-store.svg');
+}
+
+.desktop-screen[data-icon-design='soft'] .icon-graphic.email,
+.desktop-screen[data-icon-design='soft'] .explorer-icon.email {
+  background-image: url('/icons/soft/email.svg');
+}
+
+.desktop-screen[data-icon-design='soft'] .icon-graphic.reminder,
+.desktop-screen[data-icon-design='soft'] .explorer-icon.reminder {
+  background-image: url('/icons/soft/reminder.svg');
+}
+
+.desktop-screen[data-icon-design='soft'] .icon-graphic.file,
+.desktop-screen[data-icon-design='soft'] .explorer-icon.file {
+  background-image: url('/icons/soft/file.svg');
+}
+
+.desktop-screen[data-icon-design='soft'] .icon-graphic.trash,
+.desktop-screen[data-icon-design='soft'] .explorer-icon.trash {
+  background-image: url('/icons/soft/trash.svg');
+}
+
+.desktop-screen[data-icon-design='soft'] .icon-graphic.trash-full,
+.desktop-screen[data-icon-design='soft'] .explorer-icon.trash-full {
+  background-image: url('/icons/soft/trash-full.svg');
+}
+
+.desktop-screen[data-icon-design='cyber'] .icon-graphic.folder,
+.desktop-screen[data-icon-design='cyber'] .explorer-icon.folder {
+  background-image: url('/icons/cyber/folder.svg');
+}
+
+.desktop-screen[data-icon-design='cyber'] .icon-graphic.computer,
+.desktop-screen[data-icon-design='cyber'] .explorer-icon.computer {
+  background-image: url('/icons/cyber/computer.svg');
+}
+
+.desktop-screen[data-icon-design='cyber'] .icon-graphic.settings,
+.desktop-screen[data-icon-design='cyber'] .explorer-icon.settings {
+  background-image: url('/icons/cyber/settings.svg');
+}
+
+.desktop-screen[data-icon-design='cyber'] .icon-graphic.notepad,
+.desktop-screen[data-icon-design='cyber'] .explorer-icon.notepad {
+  background-image: url('/icons/cyber/notepad.svg');
+}
+
+.desktop-screen[data-icon-design='cyber'] .icon-graphic.app-store,
+.desktop-screen[data-icon-design='cyber'] .explorer-icon.app-store {
+  background-image: url('/icons/cyber/app-store.svg');
+}
+
+.desktop-screen[data-icon-design='cyber'] .icon-graphic.email,
+.desktop-screen[data-icon-design='cyber'] .explorer-icon.email {
+  background-image: url('/icons/cyber/email.svg');
+}
+
+.desktop-screen[data-icon-design='cyber'] .icon-graphic.reminder,
+.desktop-screen[data-icon-design='cyber'] .explorer-icon.reminder {
+  background-image: url('/icons/cyber/reminder.svg');
+}
+
+.desktop-screen[data-icon-design='cyber'] .icon-graphic.file,
+.desktop-screen[data-icon-design='cyber'] .explorer-icon.file {
+  background-image: url('/icons/cyber/file.svg');
+}
+
+.desktop-screen[data-icon-design='cyber'] .icon-graphic.trash,
+.desktop-screen[data-icon-design='cyber'] .explorer-icon.trash {
+  background-image: url('/icons/cyber/trash.svg');
+}
+
+.desktop-screen[data-icon-design='cyber'] .icon-graphic.trash-full,
+.desktop-screen[data-icon-design='cyber'] .explorer-icon.trash-full {
+  background-image: url('/icons/cyber/trash-full.svg');
+}
+
+.desktop-screen[data-icon-design='midnight'] .icon-graphic.folder,
+.desktop-screen[data-icon-design='midnight'] .explorer-icon.folder {
+  background-image: url('/icons/midnight/folder.svg');
+}
+
+.desktop-screen[data-icon-design='midnight'] .icon-graphic.computer,
+.desktop-screen[data-icon-design='midnight'] .explorer-icon.computer {
+  background-image: url('/icons/midnight/computer.svg');
+}
+
+.desktop-screen[data-icon-design='midnight'] .icon-graphic.settings,
+.desktop-screen[data-icon-design='midnight'] .explorer-icon.settings {
+  background-image: url('/icons/midnight/settings.svg');
+}
+
+.desktop-screen[data-icon-design='midnight'] .icon-graphic.notepad,
+.desktop-screen[data-icon-design='midnight'] .explorer-icon.notepad {
+  background-image: url('/icons/midnight/notepad.svg');
+}
+
+.desktop-screen[data-icon-design='midnight'] .icon-graphic.app-store,
+.desktop-screen[data-icon-design='midnight'] .explorer-icon.app-store {
+  background-image: url('/icons/midnight/app-store.svg');
+}
+
+.desktop-screen[data-icon-design='midnight'] .icon-graphic.email,
+.desktop-screen[data-icon-design='midnight'] .explorer-icon.email {
+  background-image: url('/icons/midnight/email.svg');
+}
+
+.desktop-screen[data-icon-design='midnight'] .icon-graphic.reminder,
+.desktop-screen[data-icon-design='midnight'] .explorer-icon.reminder {
+  background-image: url('/icons/midnight/reminder.svg');
+}
+
+.desktop-screen[data-icon-design='midnight'] .icon-graphic.file,
+.desktop-screen[data-icon-design='midnight'] .explorer-icon.file {
+  background-image: url('/icons/midnight/file.svg');
+}
+
+.desktop-screen[data-icon-design='midnight'] .icon-graphic.trash,
+.desktop-screen[data-icon-design='midnight'] .explorer-icon.trash {
+  background-image: url('/icons/midnight/trash.svg');
+}
+
+.desktop-screen[data-icon-design='midnight'] .icon-graphic.trash-full,
+.desktop-screen[data-icon-design='midnight'] .explorer-icon.trash-full {
+  background-image: url('/icons/midnight/trash-full.svg');
+}
+
+.desktop-screen[data-icon-design='candy'] .icon-graphic.folder,
+.desktop-screen[data-icon-design='candy'] .explorer-icon.folder {
+  background-image: url('/icons/candy/folder.svg');
+}
+
+.desktop-screen[data-icon-design='candy'] .icon-graphic.computer,
+.desktop-screen[data-icon-design='candy'] .explorer-icon.computer {
+  background-image: url('/icons/candy/computer.svg');
+}
+
+.desktop-screen[data-icon-design='candy'] .icon-graphic.settings,
+.desktop-screen[data-icon-design='candy'] .explorer-icon.settings {
+  background-image: url('/icons/candy/settings.svg');
+}
+
+.desktop-screen[data-icon-design='candy'] .icon-graphic.notepad,
+.desktop-screen[data-icon-design='candy'] .explorer-icon.notepad {
+  background-image: url('/icons/candy/notepad.svg');
+}
+
+.desktop-screen[data-icon-design='candy'] .icon-graphic.app-store,
+.desktop-screen[data-icon-design='candy'] .explorer-icon.app-store {
+  background-image: url('/icons/candy/app-store.svg');
+}
+
+.desktop-screen[data-icon-design='candy'] .icon-graphic.email,
+.desktop-screen[data-icon-design='candy'] .explorer-icon.email {
+  background-image: url('/icons/candy/email.svg');
+}
+
+.desktop-screen[data-icon-design='candy'] .icon-graphic.reminder,
+.desktop-screen[data-icon-design='candy'] .explorer-icon.reminder {
+  background-image: url('/icons/candy/reminder.svg');
+}
+
+.desktop-screen[data-icon-design='candy'] .icon-graphic.file,
+.desktop-screen[data-icon-design='candy'] .explorer-icon.file {
+  background-image: url('/icons/candy/file.svg');
+}
+
+.desktop-screen[data-icon-design='candy'] .icon-graphic.trash,
+.desktop-screen[data-icon-design='candy'] .explorer-icon.trash {
+  background-image: url('/icons/candy/trash.svg');
+}
+
+.desktop-screen[data-icon-design='candy'] .icon-graphic.trash-full,
+.desktop-screen[data-icon-design='candy'] .explorer-icon.trash-full {
+  background-image: url('/icons/candy/trash-full.svg');
+}
+
+.desktop-screen[data-icon-design='matrix'] .icon-graphic.folder,
+.desktop-screen[data-icon-design='matrix'] .explorer-icon.folder {
+  background-image: url('/icons/matrix/folder.svg');
+}
+
+.desktop-screen[data-icon-design='matrix'] .icon-graphic.computer,
+.desktop-screen[data-icon-design='matrix'] .explorer-icon.computer {
+  background-image: url('/icons/matrix/computer.svg');
+}
+
+.desktop-screen[data-icon-design='matrix'] .icon-graphic.settings,
+.desktop-screen[data-icon-design='matrix'] .explorer-icon.settings {
+  background-image: url('/icons/matrix/settings.svg');
+}
+
+.desktop-screen[data-icon-design='matrix'] .icon-graphic.notepad,
+.desktop-screen[data-icon-design='matrix'] .explorer-icon.notepad {
+  background-image: url('/icons/matrix/notepad.svg');
+}
+
+.desktop-screen[data-icon-design='matrix'] .icon-graphic.app-store,
+.desktop-screen[data-icon-design='matrix'] .explorer-icon.app-store {
+  background-image: url('/icons/matrix/app-store.svg');
+}
+
+.desktop-screen[data-icon-design='matrix'] .icon-graphic.email,
+.desktop-screen[data-icon-design='matrix'] .explorer-icon.email {
+  background-image: url('/icons/matrix/email.svg');
+}
+
+.desktop-screen[data-icon-design='matrix'] .icon-graphic.reminder,
+.desktop-screen[data-icon-design='matrix'] .explorer-icon.reminder {
+  background-image: url('/icons/matrix/reminder.svg');
+}
+
+.desktop-screen[data-icon-design='matrix'] .icon-graphic.file,
+.desktop-screen[data-icon-design='matrix'] .explorer-icon.file {
+  background-image: url('/icons/matrix/file.svg');
+}
+
+.desktop-screen[data-icon-design='matrix'] .icon-graphic.trash,
+.desktop-screen[data-icon-design='matrix'] .explorer-icon.trash {
+  background-image: url('/icons/matrix/trash.svg');
+}
+
+.desktop-screen[data-icon-design='matrix'] .icon-graphic.trash-full,
+.desktop-screen[data-icon-design='matrix'] .explorer-icon.trash-full {
+  background-image: url('/icons/matrix/trash-full.svg');
 }
 
 .icon-label {
@@ -636,6 +1065,338 @@
   color: #fff;
 }
 
+.app-store-shell {
+  width: 100%;
+  height: 100%;
+  padding: 20px 22px;
+  display: grid;
+  gap: 12px;
+  align-content: start;
+  background: linear-gradient(180deg, #fbfcff 0%, #edf2fb 100%);
+  color: #1f2430;
+}
+
+.app-store-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.app-store-subtitle {
+  font-size: 0.82rem;
+  color: #56627a;
+}
+
+.app-store-list {
+  display: grid;
+  gap: 10px;
+}
+
+.app-store-card {
+  border: 1px solid rgba(34, 53, 82, 0.12);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.86);
+  padding: 12px;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 12px;
+}
+
+.app-store-app-icon {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  border-radius: 10px;
+}
+
+.app-store-app-main {
+  min-width: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.app-store-app-name {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #202938;
+}
+
+.app-store-app-note {
+  font-size: 0.78rem;
+  color: #586178;
+}
+
+.app-store-progress {
+  width: 100%;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(88, 109, 142, 0.2);
+  overflow: hidden;
+}
+
+.app-store-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #64adff, #3f79ff);
+  transition: width 0.2s linear;
+}
+
+.app-store-progress-bar.is-complete {
+  background: linear-gradient(90deg, #51c87d, #36a463);
+}
+
+.app-store-actions {
+  display: grid;
+  gap: 8px;
+}
+
+.app-store-action {
+  border: 1px solid rgba(49, 82, 137, 0.24);
+  background: linear-gradient(135deg, #fdfefe, #dfe7f7);
+  color: #1f2a3c;
+  border-radius: 8px;
+  padding: 7px 12px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  min-width: 72px;
+}
+
+.app-store-action:hover:not(:disabled) {
+  background: linear-gradient(135deg, #ffffff, #d0dcf5);
+}
+
+.app-store-action:disabled {
+  opacity: 0.7;
+  cursor: default;
+}
+
+.app-store-action.is-danger {
+  border-color: rgba(145, 45, 45, 0.35);
+  background: linear-gradient(135deg, #ff7676, #ff9a9a);
+  color: #fff;
+}
+
+.app-store-action.is-danger:hover:not(:disabled) {
+  background: linear-gradient(135deg, #ff6868, #ff8f8f);
+}
+
+.reminder-shell {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-rows: auto auto 1fr;
+  gap: 10px;
+  padding: 14px;
+  box-sizing: border-box;
+  background: linear-gradient(180deg, #fdfbf5 0%, #f5efe2 100%);
+  position: relative;
+}
+
+.reminder-title {
+  font-size: 0.96rem;
+  font-weight: 700;
+  color: #3a2f20;
+}
+
+.reminder-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.reminder-board-toggle {
+  border-radius: 8px;
+  border: 1px solid rgba(83, 58, 25, 0.25);
+  background: rgba(255, 255, 255, 0.7);
+  color: #3a2b18;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 5px 9px;
+  cursor: pointer;
+}
+
+.reminder-board-toggle:hover {
+  background: rgba(255, 255, 255, 0.88);
+}
+
+.reminder-board-toggle.is-off {
+  opacity: 0.72;
+}
+
+.reminder-add-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+}
+
+.reminder-add-row input {
+  border-radius: 8px;
+  border: 1px solid rgba(60, 45, 25, 0.2);
+  background: #fffaf0;
+  color: #2e261c;
+  padding: 8px 10px;
+  font-size: 0.82rem;
+}
+
+.reminder-add-row button {
+  border-radius: 8px;
+  border: 1px solid rgba(105, 72, 26, 0.3);
+  background: linear-gradient(135deg, #ffcf84, #f0b35c);
+  color: #3a2a14;
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 7px 12px;
+  cursor: pointer;
+}
+
+.reminder-list {
+  display: grid;
+  gap: 8px;
+  align-content: start;
+  overflow: auto;
+}
+
+.reminder-empty {
+  font-size: 0.82rem;
+  color: #6f604d;
+  padding: 14px 4px;
+}
+
+.reminder-item {
+  border: 1px solid rgba(61, 49, 34, 0.18);
+  border-radius: 10px;
+  background: rgba(255, 252, 244, 0.9);
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+}
+
+.reminder-item.is-done {
+  opacity: 0.78;
+}
+
+.reminder-main {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.reminder-text {
+  font-size: 0.82rem;
+  color: #2f2519;
+  word-break: break-word;
+}
+
+.reminder-item.is-done .reminder-text {
+  text-decoration: line-through;
+}
+
+.reminder-meta {
+  font-size: 0.7rem;
+  color: #796b57;
+}
+
+.reminder-meta.is-secondary {
+  opacity: 0.78;
+}
+
+.reminder-toggle,
+.reminder-edit,
+.reminder-delete {
+  border-radius: 7px;
+  border: 1px solid rgba(61, 49, 34, 0.2);
+  background: #fff;
+  color: #3c2f20;
+  font-size: 0.7rem;
+  padding: 4px 8px;
+  cursor: pointer;
+}
+
+.reminder-edit {
+  color: #2f4f82;
+}
+
+.reminder-delete {
+  color: #6a2727;
+}
+
+.reminder-toggle:hover,
+.reminder-edit:hover,
+.reminder-delete:hover {
+  background: #f5ebd8;
+}
+
+.reminder-schedule-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(26, 20, 14, 0.35);
+  display: grid;
+  place-items: center;
+  padding: 14px;
+  z-index: 2;
+}
+
+.reminder-schedule-card {
+  width: min(320px, 100%);
+  border-radius: 12px;
+  border: 1px solid rgba(68, 49, 21, 0.2);
+  background: #fff8ea;
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.25);
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+}
+
+.reminder-schedule-title {
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: #3c2f20;
+}
+
+.reminder-schedule-field {
+  display: grid;
+  gap: 6px;
+}
+
+.reminder-schedule-field span {
+  font-size: 0.74rem;
+  color: #5e4c35;
+}
+
+.reminder-schedule-field input {
+  border-radius: 8px;
+  border: 1px solid rgba(68, 49, 21, 0.2);
+  background: #fffdf8;
+  color: #2d2418;
+  padding: 7px 9px;
+  font-size: 0.8rem;
+}
+
+.reminder-schedule-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.reminder-schedule-actions button {
+  border-radius: 8px;
+  border: 1px solid rgba(68, 49, 21, 0.2);
+  background: #fffef8;
+  color: #3f301e;
+  font-size: 0.74rem;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+.reminder-schedule-actions button.is-primary {
+  border-color: rgba(108, 74, 26, 0.28);
+  background: linear-gradient(135deg, #ffcf84, #f0b35c);
+  color: #342511;
+}
+
 .confirm-dialog {
   width: 100%;
   height: 100%;
@@ -711,6 +1472,117 @@
   border-top-color: rgba(60, 60, 60, 0.85);
   animation: spin 1s linear infinite;
   justify-self: center;
+}
+
+.background-picker {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  box-sizing: border-box;
+  background: #f3f5f8;
+  overflow: auto;
+}
+
+.background-picker-section {
+  display: grid;
+  gap: 10px;
+}
+
+.background-picker-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #1b2230;
+}
+
+.background-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 12px;
+  align-content: start;
+}
+
+.background-option {
+  border: 1px solid rgba(28, 34, 42, 0.18);
+  border-radius: 10px;
+  background: #fff;
+  padding: 8px;
+  display: grid;
+  gap: 8px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.background-option:hover {
+  border-color: rgba(76, 122, 212, 0.45);
+}
+
+.background-option.is-active {
+  border-color: rgba(76, 122, 212, 0.75);
+  box-shadow: 0 0 0 2px rgba(76, 122, 212, 0.2);
+}
+
+.background-option img {
+  width: 100%;
+  height: 90px;
+  border-radius: 8px;
+  object-fit: cover;
+  display: block;
+}
+
+.background-option span {
+  font-size: 0.8rem;
+  color: #1f2533;
+}
+
+.icon-design-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 10px;
+}
+
+.icon-design-option {
+  border: 1px solid rgba(28, 34, 42, 0.18);
+  border-radius: 10px;
+  background: #fff;
+  padding: 8px;
+  display: grid;
+  gap: 8px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.icon-design-option:hover {
+  border-color: rgba(76, 122, 212, 0.45);
+}
+
+.icon-design-option.is-active {
+  border-color: rgba(76, 122, 212, 0.75);
+  box-shadow: 0 0 0 2px rgba(76, 122, 212, 0.2);
+}
+
+.icon-design-preview {
+  width: 100%;
+  height: 74px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, #f8f9fb, #edf2f8);
+  box-shadow: inset 0 0 0 1px rgba(28, 34, 42, 0.1);
+}
+
+.icon-design-preview img {
+  width: 50px;
+  height: 50px;
+  object-fit: contain;
+  display: block;
+}
+
+.icon-design-label {
+  font-size: 0.8rem;
+  color: #1f2533;
 }
 
 .taskbar {
@@ -822,6 +1694,46 @@
   padding-right: 4px;
 }
 
+.taskbar-clock {
+  min-width: 124px;
+  padding: 5px 10px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+  display: grid;
+  justify-items: end;
+  line-height: 1.1;
+}
+
+.taskbar-status-icon.notification-toggle,
+.taskbar-status-icon.wifi-toggle {
+  border: none;
+  padding: 0;
+  color: inherit;
+  cursor: pointer;
+}
+
+.taskbar-status-icon.notification-toggle:hover,
+.taskbar-status-icon.wifi-toggle:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.taskbar-clock-toggle:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.75);
+  outline-offset: 2px;
+}
+
+.taskbar-clock-time {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #f5f5f5;
+}
+
+.taskbar-clock-date {
+  font-size: 0.68rem;
+  color: #c8c8c8;
+}
+
 .taskbar-status-icon {
   width: 28px;
   height: 28px;
@@ -835,7 +1747,8 @@
 }
 
 .taskbar-status-icon.notification-toggle,
-.taskbar-status-icon.wifi-toggle {
+.taskbar-status-icon.wifi-toggle,
+.taskbar-status-icon.volume-toggle {
   border: none;
   padding: 0;
   color: inherit;
@@ -843,7 +1756,8 @@
 }
 
 .taskbar-status-icon.notification-toggle:hover,
-.taskbar-status-icon.wifi-toggle:hover {
+.taskbar-status-icon.wifi-toggle:hover,
+.taskbar-status-icon.volume-toggle:hover {
   background: rgba(255, 255, 255, 0.15);
 }
 
@@ -872,6 +1786,141 @@
   stroke-linejoin: round;
   fill: none;
   opacity: 0.9;
+}
+
+.calendar-panel {
+  position: absolute;
+  right: 16px;
+  bottom: 62px;
+  width: min(296px, 88vw);
+  background: rgba(28, 30, 34, 0.97);
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  color: #f6f6f6;
+  z-index: 4;
+  animation: notification-pop 0.2s ease-out;
+}
+
+.calendar-panel.is-closing {
+  animation: notification-pop-out 0.18s ease-in forwards;
+}
+
+.calendar-header {
+  display: grid;
+  gap: 2px;
+}
+
+.calendar-title {
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.calendar-subtitle {
+  font-size: 0.74rem;
+  color: #bdc5d3;
+}
+
+.calendar-controls {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.calendar-nav-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.calendar-nav-button {
+  width: 28px;
+  height: 24px;
+  border-radius: 7px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.08);
+  color: #f6f6f6;
+  cursor: pointer;
+  font-size: 0.82rem;
+  line-height: 1;
+}
+
+.calendar-nav-button:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.calendar-nav-button:focus-visible,
+.calendar-today-button:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.75);
+  outline-offset: 2px;
+}
+
+.calendar-month-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-align: center;
+  color: #edf3ff;
+}
+
+.calendar-today-button {
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #e8eef9;
+  padding: 5px 8px;
+  font-size: 0.72rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.calendar-today-button:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.calendar-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.calendar-weekdays span {
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #aab3c2;
+  text-align: center;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.calendar-day {
+  height: 30px;
+  border-radius: 7px;
+  display: grid;
+  place-items: center;
+  font-size: 0.74rem;
+  color: #edf2fa;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.calendar-day.is-outside {
+  color: #8490a3;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.calendar-day.is-today {
+  background: rgba(109, 200, 255, 0.25);
+  box-shadow: inset 0 0 0 1px rgba(109, 200, 255, 0.45);
+  color: #ffffff;
+  font-weight: 700;
 }
 
 .notification-panel {
