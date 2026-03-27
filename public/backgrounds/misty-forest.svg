@@ -1,0 +1,38 @@
+<svg width="1600" height="900" viewBox="0 0 1600 900" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="mist" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#0f1d24"/>
+      <stop offset="45%" stop-color="#2f4f57"/>
+      <stop offset="100%" stop-color="#5f7d72"/>
+    </linearGradient>
+    <linearGradient id="ground" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#2e4437"/>
+      <stop offset="100%" stop-color="#1a2a21"/>
+    </linearGradient>
+  </defs>
+  <rect width="1600" height="900" fill="url(#mist)"/>
+  <g fill="#2b3e3f" opacity="0.65">
+    <path d="M0 520 L210 300 L420 520 Z"/>
+    <path d="M280 520 L560 220 L850 520 Z"/>
+    <path d="M640 520 L940 260 L1240 520 Z"/>
+    <path d="M980 520 L1260 310 L1550 520 Z"/>
+  </g>
+  <rect y="520" width="1600" height="380" fill="url(#ground)"/>
+  <g stroke="#0f1b16" stroke-width="14" stroke-linecap="round">
+    <line x1="170" y1="560" x2="170" y2="900"/>
+    <line x1="340" y1="540" x2="340" y2="900"/>
+    <line x1="520" y1="570" x2="520" y2="900"/>
+    <line x1="760" y1="530" x2="760" y2="900"/>
+    <line x1="980" y1="560" x2="980" y2="900"/>
+    <line x1="1160" y1="520" x2="1160" y2="900"/>
+    <line x1="1360" y1="550" x2="1360" y2="900"/>
+  </g>
+  <g stroke="#1b2d23" stroke-width="7" stroke-linecap="round">
+    <line x1="170" y1="640" x2="130" y2="700"/>
+    <line x1="170" y1="690" x2="220" y2="760"/>
+    <line x1="340" y1="620" x2="290" y2="690"/>
+    <line x1="760" y1="620" x2="810" y2="700"/>
+    <line x1="1160" y1="620" x2="1110" y2="700"/>
+    <line x1="1360" y1="650" x2="1410" y2="730"/>
+  </g>
+</svg>

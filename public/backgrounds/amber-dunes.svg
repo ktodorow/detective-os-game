@@ -1,0 +1,25 @@
+<svg width="1600" height="900" viewBox="0 0 1600 900" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="dawn" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#402036"/>
+      <stop offset="45%" stop-color="#b45f4a"/>
+      <stop offset="100%" stop-color="#f2b067"/>
+    </linearGradient>
+    <pattern id="sand" width="12" height="12" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#ffffff18"/>
+      <circle cx="8" cy="6" r="1" fill="#ffffff14"/>
+    </pattern>
+  </defs>
+  <rect width="1600" height="900" fill="url(#dawn)"/>
+  <circle cx="320" cy="180" r="85" fill="#ffd9a8aa"/>
+  <g fill="#a85a3f">
+    <path d="M0 560 C200 500 360 620 560 560 C740 505 910 630 1120 560 C1320 495 1470 620 1600 570 V900 H0 Z"/>
+  </g>
+  <g fill="#c7794f">
+    <path d="M0 650 C210 590 370 700 560 650 C730 605 920 720 1120 660 C1300 610 1460 700 1600 650 V900 H0 Z"/>
+  </g>
+  <g fill="#e39a60">
+    <path d="M0 740 C240 690 410 780 620 740 C820 700 1000 790 1220 745 C1390 710 1510 760 1600 740 V900 H0 Z"/>
+  </g>
+  <rect width="1600" height="900" fill="url(#sand)"/>
+</svg>

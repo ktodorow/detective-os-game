@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { bootLines } from '../constants/bootLines'
+import { useAudioSettings } from '../state/audioSettingsContext'
 import '../styles/boot.css'
 
 const BOOT_SOUND_SRC = '/audio/old90sbootupsound.mp3'
@@ -17,6 +18,7 @@ const bootDeviceIndex = bootLines.findIndex((line) =>
 )
 
 export function BootScreen({ onComplete }) {
+  const { volume: masterVolume, muted } = useAudioSettings()
   const [visibleCount, setVisibleCount] = useState(0)
   const [flashVisible, setFlashVisible] = useState(false)
   const [bootStarted, setBootStarted] = useState(false)
@@ -73,7 +75,7 @@ export function BootScreen({ onComplete }) {
     const audio = audioRef.current
     if (!audio) return
 
-    const baseVolume = 1
+    const baseVolume = muted ? 0 : masterVolume
     audio.volume = baseVolume
     audio.currentTime = 0
 
@@ -94,7 +96,7 @@ export function BootScreen({ onComplete }) {
       audio.pause()
       audio.currentTime = 0
     }
-  }, [bootStarted])
+  }, [bootStarted, masterVolume, muted])
 
   return (
     <main className="app">

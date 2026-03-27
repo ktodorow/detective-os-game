@@ -35,6 +35,11 @@ const getBasename = (path) => {
   return parts[parts.length - 1] ?? ''
 }
 
+const getSubtreePaths = (nodes, rootPath) =>
+  Object.keys(nodes).filter(
+    (nodePath) => nodePath === rootPath || nodePath.startsWith(`${rootPath}/`)
+  )
+
 const filesystemReducer = (state, action) => {
   switch (action.type) {
     case 'CREATE_DIR': {
@@ -86,14 +91,18 @@ const filesystemReducer = (state, action) => {
     case 'DELETE_NODE': {
       const path = normalizePath(action.path)
       const node = state.nodes[path]
-      if (!node || node.type !== 'file') return state
+      if (!node || path === '/') return state
       const parentPath = getParentPath(path)
       if (!parentPath) return state
       const parent = state.nodes[parentPath]
       if (!parent || parent.type !== 'dir') return state
       const name = getBasename(path)
       const nextNodes = { ...state.nodes }
-      delete nextNodes[path]
+      const subtreePaths =
+        node.type === 'dir' ? getSubtreePaths(state.nodes, path) : [path]
+      subtreePaths.forEach((nodePath) => {
+        delete nextNodes[nodePath]
+      })
       nextNodes[parentPath] = {
         ...parent,
         children: parent.children.filter((child) => child !== name)
@@ -109,7 +118,8 @@ const filesystemReducer = (state, action) => {
       const updates = action.updates ?? null
       if (from === to) return state
       const node = state.nodes[from]
-      if (!node || node.type !== 'file') return state
+      if (!node || from === '/') return state
+      if (node.type === 'dir' && to.startsWith(`${from}/`)) return state
       if (state.nodes[to]) return state
       const fromParentPath = getParentPath(from)
       const toParentPath = getParentPath(to)
@@ -127,16 +137,31 @@ const filesystemReducer = (state, action) => {
         ? toParent.children
         : [...toParent.children, toName]
       const nextNodes = { ...state.nodes }
-      delete nextNodes[from]
-      const nextNode = updates
-        ? { ...node, name: toName, ...updates }
-        : { ...node, name: toName }
+      const subtreePaths =
+        node.type === 'dir' ? getSubtreePaths(state.nodes, from) : [from]
+      const movedNodes = {}
+      subtreePaths.forEach((oldPath) => {
+        const oldNode = state.nodes[oldPath]
+        if (!oldNode) return
+        const newPath = oldPath === from ? to : `${to}${oldPath.slice(from.length)}`
+        const isRoot = oldPath === from
+        const movedNode = isRoot ? { ...oldNode, name: toName } : { ...oldNode }
+        movedNodes[newPath] = movedNode
+        delete nextNodes[oldPath]
+      })
+      const nextRootNode = updates
+        ? { ...movedNodes[to], ...updates }
+        : movedNodes[to]
+      const nextNode = nextRootNode ?? (updates ? { ...node, ...updates } : node)
       if (updates?.originPath === null) {
         delete nextNode.originPath
       }
       if (updates?.trashedAt === null) {
         delete nextNode.trashedAt
       }
+      Object.entries(movedNodes).forEach(([newPath, movedNode]) => {
+        nextNodes[newPath] = movedNode
+      })
       nextNodes[to] = nextNode
       nextNodes[fromParentPath] = {
         ...fromParent,
@@ -240,7 +265,9 @@ export function FilesystemProvider({ children }) {
       writeFile,
       createDir,
       deleteFile,
-      moveFile
+      moveFile,
+      deleteNode: deleteFile,
+      moveNode: moveFile
     }
   }, [state])
 

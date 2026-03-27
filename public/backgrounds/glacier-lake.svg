@@ -1,0 +1,28 @@
+<svg width="1600" height="900" viewBox="0 0 1600 900" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="sky" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#223a56"/>
+      <stop offset="55%" stop-color="#5f8fb5"/>
+      <stop offset="100%" stop-color="#a8d0e8"/>
+    </linearGradient>
+    <linearGradient id="ice" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#d8edf7"/>
+      <stop offset="100%" stop-color="#8dbcd5"/>
+    </linearGradient>
+  </defs>
+  <rect width="1600" height="900" fill="url(#sky)"/>
+  <g fill="#7fa6bf">
+    <path d="M0 470 L170 320 L330 470 Z"/>
+    <path d="M220 470 L470 230 L740 470 Z"/>
+    <path d="M640 470 L900 260 L1150 470 Z"/>
+    <path d="M980 470 L1260 220 L1550 470 Z"/>
+  </g>
+  <g fill="#cbe6f5">
+    <path d="M260 470 L470 230 L560 330 L420 370 Z"/>
+    <path d="M760 470 L900 260 L980 330 L860 360 Z"/>
+    <path d="M1120 470 L1260 220 L1350 330 L1210 360 Z"/>
+  </g>
+  <rect y="470" width="1600" height="430" fill="url(#ice)"/>
+  <path d="M0 620 C210 590 420 650 620 620 C820 590 1010 650 1220 620 C1380 595 1500 620 1600 610 V900 H0 Z" fill="#79aeca"/>
+  <path d="M0 700 C240 670 420 730 640 700 C860 670 1030 730 1260 700 C1410 680 1510 700 1600 690 V900 H0 Z" fill="#5e98b7"/>
+</svg>
