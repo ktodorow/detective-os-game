@@ -451,23 +451,7 @@ function DesktopSurface({ viewportRef }) {
       if (proposedName === null) return false
       const nextName = proposedName.trim()
       if (!nextName || nextName === entry.name) return false
-      const renamed = renameEntry(entry, nextName, { filesystem })
-      if (!renamed) {
-        pushNotification({
-          id: `rename-failed-${entry.path}-${Date.now()}`,
-          title: 'Rename Failed',
-          body: 'Could not rename folder. The name may be invalid or already used.',
-          time: 'Now'
-        })
-        return false
-      }
-      pushNotification({
-        id: `folder-renamed-${entry.path}-${Date.now()}`,
-        title: 'Folder Renamed',
-        body: `"${entry.name}" renamed to "${nextName}".`,
-        time: 'Now'
-      })
-      return true
+      return renameEntry(entry, nextName, { filesystem })
     }
     openContextMenu({
       event,
@@ -693,6 +677,7 @@ function DesktopSurface({ viewportRef }) {
         onToggleMinimize={toggleMinimize}
         onBringToFront={bringToFront}
         panelRootRef={viewportRef}
+        iconDesign={iconDesign}
       />
     </div>
   )

@@ -109,8 +109,11 @@ export function useDesktopItems({ openWindow }) {
     if (!entry) return false
     if (entry.type === 'dir') {
       openWindow('computer', {
-        title: 'My Computer',
-        payload: { startPath: entry.path }
+        title: entry.name || 'Folder',
+        payload: {
+          startPath: entry.path,
+          taskbarIconClass: 'folder'
+        }
       })
       return true
     }

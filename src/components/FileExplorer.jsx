@@ -7,7 +7,6 @@ import {
   trashEntry
 } from '../state/fileActions'
 import { getFileAssociation } from '../state/fileAssociations'
-import { pushNotification } from '../state/notifications'
 import {
   APP_INSTALLS_CHANGED_EVENT,
   getInstalledAppIds
@@ -229,23 +228,7 @@ export function FileExplorer({
       if (proposedName === null) return false
       const nextName = proposedName.trim()
       if (!nextName || nextName === entry.name) return false
-      const renamed = renameEntry(entry, nextName, { filesystem })
-      if (!renamed) {
-        pushNotification({
-          id: `rename-failed-${entry.path}-${Date.now()}`,
-          title: 'Rename Failed',
-          body: 'Could not rename folder. The name may be invalid or already used.',
-          time: 'Now'
-        })
-        return false
-      }
-      pushNotification({
-        id: `folder-renamed-${entry.path}-${Date.now()}`,
-        title: 'Folder Renamed',
-        body: `"${entry.name}" renamed to "${nextName}".`,
-        time: 'Now'
-      })
-      return true
+      return renameEntry(entry, nextName, { filesystem })
     }
     openContextMenu({
       event,
